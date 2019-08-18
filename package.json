@@ -1,0 +1,37 @@
+{
+  "name": "nsVote",
+  "version": "0.0.0",
+  "description": "Non-secret-voting-software",
+  "main": "script.js",
+  "scripts": {
+    "start": "node script.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Magnus Andersson",
+  "license": "BSD-2-Clause",
+  "dependencies": {
+    "concat-stream": "^2.0.0",
+    "formidable": "1.2.x",
+    "gm": "1.23.x",
+    "ip": "^1.1.5",
+    "minimist": "^1.2.0",
+    "mysql": "^2.17.1",
+    "node-rsa": "^1.0.5",
+    "node-zip": "1.1.x",
+    "redis": "^2.8.0",
+    "request": "2.88.x",
+    "serialize-javascript": "^1.7.0",
+    "streamify-string": "^1.0.1",
+    "through": "2.3.x"
+  },
+  "devDependencies": {},
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/"
+  },
+  "engines": {
+    "node": "12.x",
+    "npm": ""
+  }
+}
