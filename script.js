@@ -83,7 +83,7 @@ var flow=( function*(){
   boDbg=0; boAllowSql=1; port=5000; levelMaintenance=0; googleSiteVerification='googleXXX.html';
   wwwCommon='';
   maxUnactivity=24*60*60;  
-  boUseSnapShot=0; 
+  //boUseSnapShot=0; 
   typeApp='ip'; 
   intDDOSMax=100; tDDOSBan=5; 
   

@@ -17,7 +17,7 @@ app.roundXY=function(resM,x,y){
 app.runIdIP=function*(flow, IP, idIP, StrRole=['voter','admin']){ //check  idIP against the user-table and return diverse data
 
   var siteName=this.req.siteName, site=this.site; 
-  var TableName=site.TableName, {userTab, adminTab, choiseTab}=TableName;
+  var TableName=site.TableName, {userTab, adminTab}=TableName;
   var Prop=site.Prop;
   IP=this.myMySql.pool.escape(IP);  idIP=this.myMySql.pool.escape(idIP);
   var Sql=[],Fin=[];
@@ -58,14 +58,14 @@ app.runIdIP=function*(flow, IP, idIP, StrRole=['voter','admin']){ //check  idIP 
     }
     var tmp=arrCol.join(', ');
     Sql.push("SELECT "+tmp+" FROM "+userTab+" u WHERE IP="+IP+" AND idIP="+idIP+";");
-    Sql.push("SELECT choise FROM ("+userTab+" u JOIN "+choiseTab+" c ON u.idUser=c.idUser) WHERE IP="+IP+" AND idIP="+idIP+";");
+    //Sql.push("SELECT choise FROM ("+userTab+" u JOIN "+choiseTab+" c ON u.idUser=c.idUser) WHERE IP="+IP+" AND idIP="+idIP+";");
     Fin.push(makeRoleAFunc('voter'));
     //Fin.push(function(results){  if(typeof userInfoFrDBUpd.voter=='object') userInfoFrDBUpd.voter.choise=results[0].choise;  });
-    Fin.push(function(results){
-      if(typeof userInfoFrDBUpd.voter!='object') return;
-      userInfoFrDBUpd.voter.choise=Array(results.length);
-      for(var i=0;i<results.length;i++) userInfoFrDBUpd.voter.choise[i]=results[i].choise;
-    });
+    //Fin.push(function(results){
+      //if(typeof userInfoFrDBUpd.voter!='object') return;
+      //userInfoFrDBUpd.voter.choise=Array(results.length);
+      //for(var i=0;i<results.length;i++) userInfoFrDBUpd.voter.choise[i]=results[i].choise;
+    //});
   }
   
   if(StrRole.indexOf('admin')!=-1){

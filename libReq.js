@@ -460,7 +460,7 @@ app.SetupSqlT.prototype.createTable=function(SiteName,boDropOnly){
   var siteName=SiteName[iSite]
   var site=Site[siteName]; 
   var {Prop, TableName, ViewName}=site;
-  var {settingTab, adminTab, choiseTab, userTab, choiseSnapShotTab, userSnapShotTab}=TableName;
+  var {settingTab, adminTab, userTab}=TableName; // , choiseTab, choiseSnapShotTab, userSnapShotTab
   //eval(extractLoc(ViewName,'ViewName'));
 
   var StrTabName=object_values(TableName);
@@ -520,13 +520,6 @@ app.SetupSqlT.prototype.createTable=function(SiteName,boDropOnly){
   }
 
 
-  SqlTab.push(`CREATE TABLE `+choiseTab+` (
-  idUser int(4) NOT NULL,
-  choise TINYINT(3) UNSIGNED NOT NULL,
-  UNIQUE KEY (idUser,choise),
-  FOREIGN KEY (idUser) REFERENCES `+userTab+`(idUser) ON DELETE CASCADE
-  ) ENGINE=`+engine+` COLLATE `+collate); 
-
 
   SqlTab.push(`CREATE TABLE `+settingTab+` (
   name varchar(65) CHARSET utf8 NOT NULL,
@@ -563,27 +556,12 @@ app.SetupSqlT.prototype.createFunction=function(SiteName,boDropOnly){
   
   var site=Site[siteName]; 
   var {Prop, TableName, ViewName}=site;
-  var {settingTab, adminTab, choiseTab, userTab, choiseSnapShotTab, userSnapShotTab}=TableName;
+  var {settingTab, adminTab, userTab}=TableName; // , choiseTab, choiseSnapShotTab, userSnapShotTab
   //eval(extractLoc(ViewName,'ViewName'));
 
 
-  var sqlDBName=DB[site.db].nameDB;
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"condMakeSnapShot");
-  SqlFunction.push(`CREATE PROCEDURE `+siteName+`condMakeSnapShot()
-    BEGIN
-      DECLARE VboCopy, VageMaxSnapShot INT;
-      SET VboCopy=NOT tableExists('`+sqlDBName+`','`+userSnapShotTab+`');
-      IF VboCopy=0 THEN
-        SELECT value INTO VageMaxSnapShot FROM `+settingTab+` WHERE name='ageMaxSnapShot';
-        SELECT UNIX_TIMESTAMP(now())>CONVERT(value,UNSIGNED INTEGER)+VageMaxSnapShot INTO VboCopy FROM `+settingTab+` WHERE name='tSnapShot';
-      END IF;
-      IF VboCopy THEN
-        CALL copyTable('`+userSnapShotTab+`','`+userTab+`');
-        CALL copyTable('`+choiseSnapShotTab+`','`+choiseTab+`');
-        UPDATE `+settingTab+` SET value=UNIX_TIMESTAMP(now()) WHERE name='tSnapShot';
-      END IF;
-      SELECT VboCopy;
-    END`);
+
 
 
 
@@ -592,33 +570,23 @@ app.SetupSqlT.prototype.createFunction=function(SiteName,boDropOnly){
       BEGIN
         CALL copyTable('`+userTab+`_dup','`+userTab+`');
         CALL copyTable('`+adminTab+`_dup','`+adminTab+`');
-        CALL copyTable('`+choiseTab+`_dup','`+choiseTab+`');
       END`);
 
-  SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"dupRename");
-/*  SqlFunction.push(`CREATE PROCEDURE `+siteName+`dupRename()
-      BEGIN
-RENAME TABLE `+userTab+` TO `+userTab+`_dup,
-             `+adminTab+` TO `+adminTab+`_dup,
-             `+choiseTab+` TO `+choiseTab+`_dup;
-      END`);*/
+
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"dupTrunkOrgNCopyBack");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`dupTrunkOrgNCopyBack()
       BEGIN
-        DELETE FROM `+choiseTab+` WHERE 1;
         DELETE FROM `+adminTab+` WHERE 1;
         DELETE FROM `+userTab+` WHERE 1;
 
         INSERT INTO `+userTab+` SELECT * FROM `+userTab+`_dup;
         INSERT INTO `+adminTab+` SELECT * FROM `+adminTab+`_dup;
-        INSERT INTO `+choiseTab+` SELECT * FROM `+choiseTab+`_dup;
       END`);
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"dupDrop");
   SqlFunction.push(`CREATE PROCEDURE `+siteName+`dupDrop()
       BEGIN
-        DROP TABLE IF EXISTS `+choiseTab+`_dup;
         DROP TABLE IF EXISTS `+adminTab+`_dup;
         DROP TABLE IF EXISTS `+userTab+`_dup;
       END`);
@@ -723,7 +691,7 @@ app.SetupSqlT.prototype.createDummies=function(SiteName){
 
   var {Prop, TableName, ViewName}=site;
   var Enum={};   for(var name in Prop) {if('Enum' in Prop[name]) Enum[name]=Prop[name].Enum.concat([]); }   //extend(Enum,site.Enum);
-  var {settingTab, adminTab, choiseTab, userTab, choiseSnapShotTab, userSnapShotTab}=TableName;
+  var {settingTab, adminTab, userTab}=TableName; // , choiseTab, choiseSnapShotTab, userSnapShotTab
   //eval(extractLoc(ViewName,'ViewName'));
 
   
@@ -753,7 +721,7 @@ app.SetupSqlT.prototype.createDummies=function(SiteName){
 
   var StrPlugIn=site.StrPlugIn;
   var arrAssign=[];
-  if(in_array("general", StrPlugIn)){ arrAssign=['idUser', 'IP', 'idIP', 'lastActivity', 'created']; }
+  if(in_array("general", StrPlugIn)){ arrAssign=['idUser', 'IP', 'idIP', 'lastActivity', 'created', 'choise']; }
 
   if(in_array("appFB", StrPlugIn)){
     arrAssign=arrAssign.concat(['homeTown','state','locale','timezone','gender', 'nameIP', 'nickIP']);
@@ -791,20 +759,21 @@ app.SetupSqlT.prototype.createDummies=function(SiteName){
       else if(name in DateSpan){ value=getRandomDateW(name);  }
       //if(name in UserUpdF){ var tmp=UserUpdF[name].call(site.Enum,name,value); QMark=tmp[0]; var trash=tmp[1];  }
       if(!(name in Prop)) debugger
-      if('voterUpdF' in Prop[name]){ var tmp=Prop[name].voterUpdF.call(Prop,name,value); QMark=tmp[0]; var trash=tmp[1];  }
+      if('voterUpdF' in Prop[name]){ var [QMark,trash]=Prop[name].voterUpdF.call(Prop,name,value);  }
       var valT=QMark.replace(/\?/,value);     
       if(in_array(name,StringData) && value!==null){ valT="'"+valT+"'";}
 
       StrIns.push(valT);
     }
+    //var c0=getRandSpan('choise'); StrIns.push(c0);
     var strIns=StrIns.join(', ');  
     var sqlCurU="("+strIns+")"; 
     SqlAllU.push(sqlCurU);  
 
-    var c0=getRandSpan('choise'), c1;     while(1) {c1=getRandSpan('choise'); if(c1!=c0) break;}
+     //, c1;     while(1) {c1=getRandSpan('choise'); if(c1!=c0) break;}
     //var sqlCurC="("+person.idUser+', '+getRandSpan('choise')+")";     SqlAllC.push(sqlCurC);  
-    var sqlCurC="("+person.idUser+', '+c0+")";     SqlAllC.push(sqlCurC);  
-    if(Math.random()>0.5) {var sqlCurC="("+person.idUser+', '+c1+")";     SqlAllC.push(sqlCurC);  }
+    //var sqlCurC="("+person.idUser+', '+c0+")";     SqlAllC.push(sqlCurC);  
+    //if(Math.random()>0.5) {var sqlCurC="("+person.idUser+', '+c1+")";     SqlAllC.push(sqlCurC);  }
   }
 
   var tmp=SqlAllU.join(",");
@@ -812,8 +781,8 @@ app.SetupSqlT.prototype.createDummies=function(SiteName){
 
 
 
-  var tmp=SqlAllC.join(",");
-  SqlDummies.push("INSERT INTO "+choiseTab+" (idUser,choise) VALUES "+tmp);
+  //var tmp=SqlAllC.join(",");
+  //SqlDummies.push("INSERT INTO "+choiseTab+" (idUser,choise) VALUES "+tmp);
 
   }
   return SqlDummies;
@@ -831,24 +800,26 @@ app.SetupSqlT.prototype.truncate=function(SiteName){
   
   var SqlTableTruncate=[];
   for(var iSite=0;iSite<SiteName.length;iSite++){
-  var siteName=SiteName[iSite]
-  var site=Site[siteName]; 
+    var siteName=SiteName[iSite]
+    var site=Site[siteName]; 
 
-  //var StrTabName=object_values(site.TableName);
-  var StrTabName=["setting","admin","choise","user"];
-  for(var i=0;i<StrTabName.length;i++){    StrTabName[i]=siteName+'_'+StrTabName[i];  }
+    //var StrTabName=object_values(site.TableName);
+    var StrTabName=["setting","admin","user"]; //,"choise"
+    for(var i=0;i<StrTabName.length;i++){    StrTabName[i]=siteName+'_'+StrTabName[i];  }
 
-  var SqlTmp=[];
-  for(var i=0;i<StrTabName.length;i++){
-    SqlTmp.push(StrTabName[i]+" WRITE");
-  }
-  var tmp="LOCK TABLES "+SqlTmp.join(', ');
-  SqlTableTruncate.push(tmp);
-  for(var i=0;i<StrTabName.length;i++){
-    SqlTableTruncate.push("DELETE FROM "+StrTabName[i]);
-    SqlTableTruncate.push("ALTER TABLE "+StrTabName[i]+" AUTO_INCREMENT = 1");
-  }
-  SqlTableTruncate.push('UNLOCK TABLES');
+    var SqlTmp=[];
+    for(var i=0;i<StrTabName.length;i++){
+      SqlTmp.push(StrTabName[i]+" WRITE");
+    }
+    SqlTableTruncate.push('SET FOREIGN_KEY_CHECKS=0');
+    var tmp="LOCK TABLES "+SqlTmp.join(', ');
+    SqlTableTruncate.push(tmp);
+    for(var i=0;i<StrTabName.length;i++){
+      SqlTableTruncate.push("DELETE FROM "+StrTabName[i]);
+      SqlTableTruncate.push("ALTER TABLE "+StrTabName[i]+" AUTO_INCREMENT = 1");
+    }
+    SqlTableTruncate.push('UNLOCK TABLES');
+    SqlTableTruncate.push('SET FOREIGN_KEY_CHECKS=1;');
   }
   return SqlTableTruncate;
 }
@@ -955,7 +926,7 @@ ReqSql.prototype.toBrowser=function(objSetupSql){
 
 
 app.createDumpCommand=function(){ 
-  var strCommand='', StrTabType=['user','choise','admin','setting'];
+  var strCommand='', StrTabType=['user','admin','setting']; //,'choise'
   for(var i=0;i<StrTabType.length;i++){
     var strTabType=StrTabType[i], StrTab=[];
     for(var j=0;j<SiteName.length;j++){

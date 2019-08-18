@@ -38,8 +38,8 @@ leafPayNotify="payNotify.js";
 
 
    // DB- tables
-StrTableKey=["setting","admin","choise","user"]; 
-StrTableKey=["setting","admin","choise","user","choiseSnapShot","userSnapShot"]; 
+StrTableKey=["setting","admin","user"];  //,"choise"
+StrTableKey=["setting","admin","user"]; //,"choise","user","choiseSnapShot","userSnapShot"
 StrViewsKey=[]; 
 TableNameProt={};for(var i=0;i<StrTableKey.length;i++) TableNameProt[StrTableKey[i]]='';
 ViewNameProt={};for(var i=0;i<StrViewsKey.length;i++) ViewNameProt[StrViewsKey[i]]='';
@@ -92,7 +92,7 @@ Plugin.general=function(){
   idIP:                  {b:'0011011110',type:'VARCHAR(128)'},
   lastActivity:          {b:'0011111101',type:'TIMESTAMP',default:'0'},
   created:               {b:'0011111101',type:'TIMESTAMP',default:'0'},
-  choise:                {b:'0000110000',type:'int(4)'}
+  choise:                {b:'0111110111',type:'int(4)'}
   };//                       0123456789
   extend(Prop,tmp);
   this.StrOrderDB=Object.keys(tmp);
@@ -102,14 +102,14 @@ Plugin.general=function(){
   Prop.created.feat={kind:'S11',min:[0, 1, 2, 4, 6, 9, 12, 18, 24, 36, 48]};
   Prop.lastActivity.feat={kind:'S11',min:[0, 1, 2, 4, 8, 15, 30, 60, 180, 365]};
 
-  Prop.choise.pre='c.';
+  //Prop.choise.pre='c.';
 
   Prop.IP.Enum=['openid', 'fb','google'];
   Prop.choise.Enum=this.Option||arrOptionDefault;
   
   Prop.choise.condBValueF=function(name, val){  return val;}; 
-  Prop.choise.binKeyF=function(name){ return "c.choise";};
-  Prop.choise.binValueF=function(name){ return "SUM(c.choise IS NOT NULL)";};
+  Prop.choise.binKeyF=function(name){ return "choise";};
+  Prop.choise.binValueF=function(name){ return "SUM(choise IS NOT NULL)";};
 
   Prop.created.cond0F=function(name, val){  val="DATE_SUB(now(), INTERVAL "+val+" MONTH)"; return name+"<="+val;};  
   Prop.lastActivity.cond0F=function(name, val){  val="DATE_SUB(now(), INTERVAL "+val+" DAY)"; return name+"<="+val;}; 

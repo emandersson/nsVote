@@ -85,11 +85,7 @@ if(process.env.strInfrastructure=='heroku'){
     // strTitle: Text in title-tag.
     // strH1: Text in h1-tag.
     // metaDescription: Text in meta description.
-    // maxVotes: Maximum number of votes per user.
     // Option: An array of options.
-    // boUseSnapShot: If boUseSnapShot is true then the userTab and the choiseTab are copied once a day and queries
-    // to make the histograms are made from them. (This is all to make those queries faster (as they will become
-    // cached).) So if the system becomes slow you can try setting boUseSnapShot=1;
   
 
   var wwwTmp="YOURDOMAIN.COM"; // just a temprary variable
@@ -97,26 +93,22 @@ if(process.env.strInfrastructure=='heroku'){
     demoOI:{
       wwwSite:"demoOI."+wwwTmp, strRootDomain:"yourDomain", googleAnalyticsTrackingID:"", db:"default", typeApp:'oi',boOpenVote:1, boTLS:0,
       strTitle:strWhichBrowser, strH1:strWhichBrowser, metaDescription:strWhichBrowser,
-      maxVotes:2,
       Option:arrOptionBrowser
     },
     demoFB:{
       wwwSite:"demoFB."+wwwTmp, strRootDomain:"yourDomain", googleAnalyticsTrackingID:"", db:"default", typeApp:'fb',boOpenVote:1, boTLS:0,
       strTitle:strWhichStarWars, strH1:strWhichStarWars, metaDescription:strWhichStarWars,
-      maxVotes:2,
       Option:arrOptionStarWars
       //,strFirstSort:'nVote',     boAscFirstSort:0
     },
     demoGoogle:{
       wwwSite:"demoGoogle."+wwwTmp, strRootDomain:"yourDomain", googleAnalyticsTrackingID:"", db:"default", typeApp:'google',boOpenVote:1, boTLS:0,
       strTitle:strWhichDrink, strH1:strWhichDrink, metaDescription:strWhichDrink,
-      maxVotes:2,
       Option:arrOptionDrink
     },
     demoIP:{
       wwwSite:"demoIP."+wwwTmp, strRootDomain:"yourDomain", googleAnalyticsTrackingID:"", db:"default", typeApp:'ip',boOpenVote:0, boTLS:0,
       strTitle:strWhichSmartphone, strH1:strWhichSmartphone, metaDescription:strWhichSmartphone,
-      maxVotes:3,
       Option:arrOptionSmartphone
     }
   }
@@ -152,7 +144,6 @@ else if(process.env.strInfrastructure=='af'){
     nsvTest:{
       wwwSite:"YOURAPP.eu01.aws.af.cm", strRootDomain:"afGavottCm", googleAnalyticsTrackingID:"UA-00000000-00", db:"default", typeApp:"fb", boOpenVote:1, boTLS:0,
       strTitle:"Is this software any good?", strH1:"Is this software any good?", metaDescription:"Is this software any good?",
-      maxVotes:5,
       Option:["yes", "no"]
     }
   }
@@ -176,7 +167,6 @@ else if(process.env.strInfrastructure=='af'){
     demoOI:{
       wwwSite:www192+"/demoOI", strRootDomain:"exampleDomain", googleAnalyticsTrackingID:"", db:"default", typeApp:'oi',boOpenVote:1, boTLS:0,
       strTitle:strWhichBrowser, strH1:strWhichBrowser, metaDescription:strWhichBrowser,
-      maxVotes:2,
       Option:arrOptionBrowser
     }
   }
@@ -206,27 +196,23 @@ else {
     demoOI:{
       wwwSite:www192+"/demoOI", strRootDomain:"192Loc", googleAnalyticsTrackingID:"", db:"myDB", typeApp:'oi',boOpenVote:1, boTLS:0,
       strTitle:strWhichBrowser, strH1:strWhichBrowser, metaDescription:strWhichBrowser,
-      maxVotes:2,
       Option:arrOptionBrowser
     },
     demoFB:{
       wwwSite:wwwLocalhost+"/demoFB", strRootDomain:"localhost", googleAnalyticsTrackingID:"", db:"myDB", typeApp:'fb',boOpenVote:1, boTLS:0,
       strTitle:strWhichStarWars, strH1:strWhichStarWars, metaDescription:strWhichStarWars,
-      maxVotes:2,
       Option:arrOptionStarWars,
       strFirstSort:'nVote',
-      boAscFirstSort:0   //,boUseSnapShot:1
+      boAscFirstSort:0
     },
     demoGoogle:{
       wwwSite:wwwLocalhost, strRootDomain:"localhost", googleAnalyticsTrackingID:"", db:"myDB", typeApp:'google',boOpenVote:1, boTLS:0,
       strTitle:strWhichDrink, strH1:strWhichDrink, metaDescription:strWhichDrink,
-      maxVotes:2,
       Option:arrOptionDrink
     },
     demoIP:{
       wwwSite:www192, strRootDomain:"192Loc", googleAnalyticsTrackingID:"", db:"myDB", typeApp:'ip',boOpenVote:0, boTLS:0,
       strTitle:strWhichSmartphone, strH1:strWhichSmartphone, metaDescription:strWhichSmartphone,
-      maxVotes:3,
       Option:arrOptionSmartphone
     }
   }

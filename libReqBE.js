@@ -153,21 +153,10 @@ ReqBE.prototype.specSetup=function*(inObj){
   }
   var boOK=yield* checkIfUserInfoFrIP.call(this);
   if(!boOK) { return [null, [Ou]];} 
-  var tmp=this.sessionCache.userInfoFrIP, IP=tmp.IP, idIP=tmp.idIP;
-  //var fiber = Fiber.current, boDoExit=0;
-  //runIdIP.call(this, IP, idIP, Role, function(err,result){ 
-    //if(err){self.mesEO(err);  callback('exited'); boDoExit=1; return; }
-    //else{   
-      //extend(self.GRet.userInfoFrDBUpd,result);    extend(self.sessionCache.userInfoFrDB,result);
-    //}
-    //fiber.run();
-  //});
-  //Fiber.yield();  if(boDoExit==1) return;
-
-
-  //var err, result; runIdIP.call(this, IP, idIP, Role, function(errT,resultT){ err=errT; result=resultT; req.flow.next(); });  yield;  if(err) return [err];
+  var {IP,idIP}=this.sessionCache.userInfoFrIP;
   var [err, result]=yield* runIdIP.call(this, flow, IP, idIP);
   extend(this.GRet.userInfoFrDBUpd,result);    extend(this.sessionCache.userInfoFrDB,result);
+
 
   yield *setRedis(flow, req.sessionID+'_Cache', this.sessionCache, maxUnactivity);
   if(!checkIfAnySpecialist.call(this)){ // If the user once clicked login, but never saved anything then logout
@@ -224,18 +213,12 @@ ReqBE.prototype.getList=function*(inObj){
   var Ou={};
   Ou.tab=[];this.NVoter=[0,0];
 
-  var {userTab, choiseTab}=site.TableName;
-  if(site.boUseSnapShot){  
-    userTab=TableName.userSnapShotTab; choiseTab=TableName.choiseSnapShotTab;
-    var sql="CALL "+siteName+"condMakeSnapShot()", Val=[];
-    var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
-    if(results[0][0].VboCopy) console.log('Made snapshot');
-  }
+  var {userTab}=site.TableName;
 
   var offset=Number(inObj.offset), rowCount=Number(inObj.rowCount);
   var Sql=[];
   var strCond=array_filter(this.Where).join(' AND '); if(strCond.length) strCond=' WHERE '+strCond;
-  Sql.push("SELECT SQL_CALC_FOUND_ROWS "+strCol+" FROM "+userTab+" u JOIN "+choiseTab+" c ON u.idUser=c.idUser "+strCond+" GROUP BY u.idUser ORDER BY lastActivity DESC LIMIT "+offset+","+rowCount+";"); 
+  Sql.push("SELECT SQL_CALC_FOUND_ROWS "+strCol+" FROM "+userTab+" u "+strCond+" GROUP BY u.idUser ORDER BY lastActivity DESC LIMIT "+offset+","+rowCount+";"); 
   Sql.push("SELECT FOUND_ROWS() AS n;"); // nFound
 
   Sql.push("SELECT count(*) AS n FROM "+userTab+";"); // nUnFiltered
@@ -255,17 +238,7 @@ ReqBE.prototype.getList=function*(inObj){
   this.Str.push("Found: "+nFound);  
   Ou.NVoter=[nFound, results[2][0].n];
 
-  var jIdUser=site.selFlip.idUser;//, jMyVote=site.selFlip.choise;;
-  var lenTab=Ou.tab.length, ids=Array(lenTab);  Ou.tabChoise=Array(lenTab); for(var j=0;j<lenTab;j++) { Ou.tabChoise[j]=[]; ids[j]=Ou.tab[j][jIdUser];}
-  if(lenTab){  // if voters found
-    var where='WHERE idUser IN ('+ids.join(', ')+')'; 
-    var sql="SELECT * FROM "+choiseTab+" "+where;
-    var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
-    for(var i=0;i<results.length;i++) {
-      var row=results[i];
-      for(var j=0;j<lenTab;j++) {var rTab=Ou.tab[j]; if(rTab[jIdUser]==row.idUser) Ou.tabChoise[j].push(row.choise);}
-    }
-  }
+  
 
   return [null, [Ou]];
 }
@@ -276,15 +249,10 @@ ReqBE.prototype.getHist=function*(inObj){
   var TableName=site.TableName;
 
   var Ou={};
-  var {userTab, choiseTab}=TableName;
-  if(site.boUseSnapShot){  
-    userTab=TableName.userSnapShotTab; choiseTab=TableName.choiseSnapShotTab;  
-    var sql="CALL "+siteName+"condMakeSnapShot();", Val=[];
-    var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
-    if(results[0][0].VboCopy) console.log('Made snapshot');
-  }
+  var {userTab}=TableName;
 
-  var strTableRef=userTab+" u JOIN "+choiseTab+" c ON u.idUser=c.idUser "; 
+  //var strTableRef=userTab+" u JOIN "+choiseTab+" c ON u.idUser=c.idUser "; 
+  var strTableRef=userTab+" u "; 
   
   var arg={strTableRef:strTableRef, WhereExtra:[]};  
   copySome(arg, site, ['Prop']);
@@ -297,7 +265,7 @@ ReqBE.prototype.getHist=function*(inObj){
 
 
 ReqBE.prototype.UUpdate=function*(inObj){ // writing needSession
-  var req=this.req, flow=req.flow, siteName=req.siteName, site=req.site, Prop=site.Prop, {userTab, choiseTab}=site.TableName;
+  var req=this.req, flow=req.flow, siteName=req.siteName, site=req.site, Prop=site.Prop, {userTab}=site.TableName;
   var Ou={};
   var boOK=yield* checkIfUserInfoFrIP.call(this);
   if(!boOK) { return [new ErrorClient('No session')]; }
@@ -317,16 +285,14 @@ ReqBE.prototype.UUpdate=function*(inObj){ // writing needSession
     if(typeof value=='string') objVar[name]=myJSEscape(value);
   }
  
-  var choise=[], boChoiseSet=0; if('choise' in objVar) {choise=objVar.choise; delete objVar.choise; boChoiseSet=1;}  
-  var nChoise=choise.length;
+
+  var boChoiseSet=0; if('choise' in objVar)  boChoiseSet=1;
 
 
     // If "choise" is empty
-  if(boChoiseSet && nChoise==0){
+  if(boChoiseSet && objVar.choise===null){
     var Sql=[];
-    //Sql.push("DELETE FROM "+choiseTab+" WHERE idUser=?;");
     Sql.push("DELETE FROM "+userTab+" WHERE IP=? AND idIP=?;");
-    //var Val=[idUser,idUser];
     var Val=[IP, idIP];
     var sql=Sql.join('\n');
     var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
@@ -335,44 +301,59 @@ ReqBE.prototype.UUpdate=function*(inObj){ // writing needSession
     return [null,[Ou]];
   }
 
-  var nTmpMax=site.maxVotes||1;
-  if(nChoise>nTmpMax) { return [new ErrorClient('To many votes')];  } 
   for(var name in objVar){    if(site.arrAllowed.indexOf(name)==-1) return [new ErrorClient ('Forbidden input')];    }
 
-  var arrK=[], arrVal=[];
-  var arrUpdQM=[], arrInsQM=[]; 
-  var StrTmp=Object.keys(objVar).concat(site.arrIPData);
-  for(var i=0;i<StrTmp.length;i++){
-    var name=StrTmp[i], value;
-    if(site.arrIPData.indexOf(name)!=-1) {value=userInfoFrIP[name];}
-    else if(site.arrAllowed.indexOf(name)!=-1) {
-      value=myJSEscape(objVar[name]);
-    }
-    else return [new ErrorClient ('Forbidden input')];
-    arrK.push(name);
-    if(typeof value!='number') {value=this.myMySql.pool.escape(value);  value=value.slice(1, -1); }
-    var QMark='?';
-    if('voterUpdF' in Prop[name]) { var tmp=Prop[name].voterUpdF.call(Prop,name,value);  QMark=tmp[0]; value=tmp[1]; }
+  //var arrK=[], arrVal=[];
+  //var arrUpdQM=[], arrInsQM=[]; 
+  //var StrTmp=Object.keys(objVar).concat(site.arrIPData);
+  //for(var i=0;i<StrTmp.length;i++){
+    //var name=StrTmp[i], value;
+    //if(site.arrIPData.indexOf(name)!=-1) {value=userInfoFrIP[name];}
+    //else if(site.arrAllowed.indexOf(name)!=-1) {
+      //value=objVar[name];
+    //}
+    //else return [new ErrorClient ('Forbidden input')];
+    //arrK.push(name);
+    //if(typeof value!='number') {value=this.myMySql.pool.escape(value);  value=value.slice(1, -1); }
+    //var QMark='?';
+    //if('voterUpdF' in Prop[name]) { var tmp=Prop[name].voterUpdF.call(Prop,name,value);  QMark=tmp[0]; value=tmp[1]; }
 
-    arrVal.push(value);
-    arrUpdQM.push("`"+name+"`="+QMark);
-    arrInsQM.push(QMark);
+    //arrVal.push(value);
+    //arrUpdQM.push("`"+name+"`="+QMark);
+    //arrInsQM.push(QMark);
+  //}
+
+  //var strCol=arrK.join(', '); if(strCol.length) strCol=', '+strCol;
+  //var strInsQ=arrInsQM.join(', '); if(strInsQ.length) strInsQ=', '+strInsQ;
+  //var strUpdQ=arrUpdQM.join(', '); if(strUpdQ.length) strUpdQ=', '+strUpdQ;
+
+  //var strAuthCol="IP,idIP", strAuthInsQ="?,?";
+
+  //var sql=`INSERT INTO `+userTab+` (`+strAuthCol+` `+strCol+`, lastActivity, created) VALUES (`+strAuthInsQ+` `+strInsQ+`, now(), now())
+    //ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser)  `+strUpdQ+`, lastActivity=now()`;  
+  //var Val=[].concat([IP, idIP], arrVal, arrVal);
+  
+
+  var arrUpdQM=[], arrVal=[];
+  var StrKey=Object.keys(objVar).concat(site.arrIPData);
+  for(var i=0;i<StrKey.length;i++){
+    var name=StrKey[i], value;
+    if(site.arrIPData.indexOf(name)!=-1) {value=userInfoFrIP[name];}
+    else{ value=objVar[name];}
+    var QMark='?';
+    if('voterUpdF' in Prop[name]) { var [QMark, value]=Prop[name].voterUpdF.call(Prop,name,value); }
+
+    arrUpdQM.push("`"+name+"`="+QMark);  arrVal.push(value);
   }
 
-  var strCol=arrK.join(', '); if(strCol.length) strCol=', '+strCol;
-  var strInsQ=arrInsQM.join(', '); if(strInsQ.length) strInsQ=', '+strInsQ;
   var strUpdQ=arrUpdQM.join(', '); if(strUpdQ.length) strUpdQ=', '+strUpdQ;
 
-
-  //var strAuthCol="IP,idIP,nameIP,nickIP", strAuthInsQ="?,?,?,?", strAuthUpdQ=", nameIP=?,nickIP=?";
-  var strAuthCol="IP,idIP", strAuthInsQ="?,?";
-
-  //var sql="INSERT INTO "+userTab+" ("+strAuthCol+" "+strCol+", lastActivity) VALUES ("+strAuthInsQ+" "+strInsQ+", now()) \n\  ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser) "+strAuthUpdQ+"  "+strUpdQ+", lastActivity=now()";  
-  //var Val=[].concat([IP, idIP, nameIP, nickIP], arrVal, [nameIP, nickIP], arrVal);
-
-  var sql=`INSERT INTO `+userTab+` (`+strAuthCol+` `+strCol+`, lastActivity, created) VALUES (`+strAuthInsQ+` `+strInsQ+`, now(), now())
-    ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser)  `+strUpdQ+`, lastActivity=now()`;  
+  var sql=`INSERT INTO `+userTab+` SET IP=?, idIP=?`+strUpdQ+`, lastActivity=now(), created=now()
+    ON DUPLICATE KEY UPDATE idUser=LAST_INSERT_ID(idUser)`+strUpdQ+`, lastActivity=now()`;  
   var Val=[].concat([IP, idIP], arrVal, arrVal);
+  
+  
+  
   
   //console.log(sql); 
   var boUInsert;
@@ -386,25 +367,13 @@ ReqBE.prototype.UUpdate=function*(inObj){ // writing needSession
     // no auto_increment    1      |      2    (like "replace":  1 deleted + 1 inserted)
     //    auto_increment    1      |      0
 
-  if(boChoiseSet){
-    var Sql=[], Val=[];
-    Sql.push("DELETE FROM "+choiseTab+" WHERE idUser=LAST_INSERT_ID();"); 
-    if(nChoise){
-      var sqlPart1="INSERT INTO "+choiseTab+" (idUser,choise) VALUES";
-      var arrPart1=array_fill(nChoise,"(LAST_INSERT_ID(),?)");
-      Sql.push(sqlPart1+' '+arrPart1.join(",")+";");
-      Val=choise;
-    }
-    var sql=Sql.join('\n');
-    var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
-  }
 
   this.mes('Data updated'); return [null,[Ou]];
 }
 
 
 ReqBE.prototype.UDelete=function*(inObj){ // writing needSession
-  var req=this.req, flow=req.flow, siteName=req.siteName, site=req.site, Prop=site.Prop, {userTab, choiseTab}=site.TableName;
+  var req=this.req, flow=req.flow, siteName=req.siteName, site=req.site, Prop=site.Prop, {userTab}=site.TableName;
   var Ou={};
   var boOK=yield* checkIfUserInfoFrIP.call(this);
   if(!boOK) { return [new ErrorClient('No session')]; }
@@ -415,7 +384,6 @@ ReqBE.prototype.UDelete=function*(inObj){ // writing needSession
   var idUser=this.sessionCache.userInfoFrDB.voter.idUser; 
 
   var Sql=[];
-  Sql.push("DELETE FROM "+choiseTab+" WHERE idUser=?;");
   Sql.push("DELETE FROM "+userTab+" WHERE idUser=?;");
   var Val=[idUser,idUser];
   var sql=Sql.join('\n');

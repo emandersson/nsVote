@@ -40,9 +40,10 @@ var addStuffGeneral=function(){
     
     
     var choiseSetF=function(iMTab){
-      var arrChoise=MTab[iMTab].choise, len=arrChoise.length;
-      var arrChoiseName=[]; for(var j=0;j<len;j++){ arrChoiseName[j]=arrOption[arrChoise[j]];}
-      var tmpN;   if(len>maxVotesDispInCol)    tmpN=langHtml.XVotes.replace(/<span><\/span>/,len);     else tmpN=arrChoiseName.join(', ');
+      //var arrChoise=MTab[iMTab].choise, len=arrChoise.length;
+      //var arrChoiseName=[]; for(var j=0;j<len;j++){ arrChoiseName[j]=arrOption[arrChoise[j]];}
+      //var tmpN;   if(len>maxVotesDispInCol)    tmpN=langHtml.XVotes.replace(/<span><\/span>/,len);     else tmpN=arrChoiseName.join(', ');
+      var tmpN=arrOption[MTab[iMTab].choise];
       return tmpN;
     }
     
@@ -427,24 +428,14 @@ var voterListTHeadExtend=function(el){
 
 var voterListDivExtend=function(el){
   el.toString=function(){return 'voterListDiv';}
-  /*var setMTab=function(MOrg){
-    if(typeof MOrg =='undefined') nMTab=0;
-    else{
-      nMTab=MOrg.length;
-      for(var i=0;i<nMTab;i++){
-        if(typeof MTab[i] =='undefined') MTab[i]={};
-        var jj=0; for(var j=0;j<cols.length;j++){  var name=cols[j], b=Prop[name].b; if(Number(b[bFlip.DBSel])) { MTab[i][name]=MOrg[i][jj]; jj++;}   } 
-      }
-    }
-  }*/
-  el.setMTab=function(MOrg, tabChoise){
+  el.setMTab=function(MOrg){ //, tabChoise
     if(typeof MOrg =='undefined') nMTab=0;
     else{
       nMTab=MOrg.length;
       for(var i=0;i<nMTab;i++){
         if(typeof MTab[i] =='undefined') MTab[i]={};
         for(var j=0;j<KeySel.length;j++){  var name=KeySel[j]; MTab[i][name]=MOrg[i][j];    } 
-        MTab[i].choise=tabChoise[i];
+        //MTab[i].choise=tabChoise[i];
       }
     }
   }
@@ -457,15 +448,15 @@ var voterListDivExtend=function(el){
   }
   el.getListRet=function(data){ 
     //var tmp=data.nTot;   if(typeof tmp!="undefined")  nTot=tmp;
-    var nCur, nFiltTot, nTot, tab, tabChoise;
+    var nCur, nFiltTot, nTot, tab; //, tabChoise;
     //var tmp=data.nCur;   if(typeof tmp!="undefined")  nCur=tmp;
     //var tmp=data.n;   if(typeof tmp!="undefined") { filterInfoSpan.setN(tmp); var nFiltTot=tmp[0];}
     //var tmp=data.n;   if(typeof tmp!="undefined") {  var nFiltTot=tmp[0];}
     var tmp=data.NVoter;   if(typeof tmp!="undefined") {  nFiltTot=tmp[0]; nTot=tmp[1];  filterInfoSpan.setN(tmp); } 
     
     var tmp=data.tab;  if(typeof tmp =='undefined') {tmp=[]; } tab=tmp; nCur=tab.length;
-    var tmp=data.tabChoise;  if(typeof tmp =='undefined') {tmp=[]; } tabChoise=tmp;
-    el.setMTab(tab,tabChoise); //MTab.length=tmp.length;
+    //var tmp=data.tabChoise;  if(typeof tmp =='undefined') {tmp=[]; } tabChoise=tmp;
+    el.setMTab(tab); //,tabChoise
     //tabToTBody();  
     el.setCell();
     el.setRowDisp();
@@ -623,59 +614,35 @@ var menuMaxWidth=500;
 var summaryDivExtend=function(el){
   el.toString=function(){return 'summaryDiv';}
   
-  var upLoad=function(){
-    var arrChoise=[], arrInd=[];
-    checkBoxes.forEach(function(ele,i) {
-      arrChoise[i]=ele.prop('checked');
-      if(arrChoise[i]) arrInd.push(i);
-    });
-    
-    var vec=[['UUpdate',{choise:arrInd}], ['specSetup',{Role:'voter'}]];   majax(oAJAX,vec);
+  var upLoad=function(ind){
+    var vec=[['UUpdate',{choise:ind}], ['specSetup',{Role:'voter'}]];   majax(oAJAX,vec);
   }
   var setSingle=function(){  this.prop({'checked':true});   }
   
-  var checkboxClick=function(e){
-    var n=0; checkBoxes.forEach(ele=>{if(ele.checked) n++;});
-    if(n>maxVotes) {setMess(langHtml.MaxXVotes); e.preventDefault(); return false;}
+  var checkboxClick=function(){
+    var ind=this.ind;
+    if(!this.checked) ind=null;
+    checkBoxes.forEach(function(ele,i) {
+      if(ele.checked) { ele.checked=false;}
+    });
     
-    if(boAppIP) {  upLoad(); }
-    else if(userInfoFrIP.IP) {upLoad(); }
+    if(boAppIP) {  upLoad(ind); }
+    else if(userInfoFrIP.IP) {upLoad(ind); }
     else {
       var el=this;
       loginReturn2=function(){
         loginReturnVoter();
-        if(userInfoFrIP){setSingle.call(el);upLoad();}
+        if(userInfoFrIP){setSingle.call(el);upLoad(ind);}
       }; 
       loginPop.setHead(langHtml.loginHeadMess).openFunc('voter');  return false; //table.find(':checkbox').prop({'checked':false});
     }
   }
   el.setAllOn=function(){ checkBoxes.forEach(function(ele,i) { ele.prop({'checked':true}); }); }
   el.setAllOff=function(){ checkBoxes.forEach(function(ele,i) { ele.prop({'checked':false}); }); }
-  var allOnClick=function(){
-    if(boAppIP) { el.setAllOn();   upLoad(); }
-    else if(userInfoFrIP.IP) { el.setAllOn();   upLoad(); }
-    else {
-      loginReturn2=function(){
-        loginReturnVoter();
-        if(userInfoFrIP.IP){el.setAllOn();upLoad();}
-      }; 
-      loginPop.setHead(langHtml.loginHeadMess).openFunc('voter'); 
-    }
-  }
-  var allOffClick=function(){
-    if(boAppIP) { el.setAllOff();   upLoad(); }
-    else if(userInfoFrIP.IP) {   el.setAllOff();   upLoad(); } 
-    else {
-      loginReturn2=function(){
-        loginReturnVoter();
-        if(userInfoFrIP.IP){el.setAllOff();upLoad();}
-      } 
-      loginPop.setHead(langHtml.loginHeadMess).openFunc('voter');
-    }
-  }
-  
 
-  el.setCheckBoxes=function(arrChoise){ 
+  
+  el.setCheckBoxes=function(arrChoise){
+    if(!(arrChoise instanceof Array)) arrChoise=[arrChoise];
     checkBoxes.forEach(function(ele,i) {
       var boOn=arrChoise.indexOf(i)!=-1;
       ele.prop({checked:boOn});
@@ -693,49 +660,19 @@ var summaryDivExtend=function(el){
     });
   }
 
-
-  el.sortByName=function(boAscT){   
-    boAsc=boAscT; thSorted=thName;
+  var thClick=function(){
+    var boAsc=this.children[0].src==uDecreasing;
+    //var boAsc=(thSorted===this)?!boAsc:this.boAscDefault;
+    //thSorted=this;
+    //var iChild=this.myIndex()
     arrImgSort.forEach(ele=>ele.prop({src:uUnsorted}) );
-    var tmp=boAsc?uIncreasing:uDecreasing;  thName.children[0].prop({src:tmp});
-    
-    var arrT=tBody.querySelectorAll('tr'), arrToSort=[...arrT];
-    var iChild=0;
-    var comparator=function(aT, bT){
-      var a=aT.children[iChild].myText().toLowerCase(),  b=bT.children[iChild].myText().toLowerCase();
-      var dire=boAsc?1:-1;
-      if(a==b) {return 0;} else return ((a<b)?-1:1)*dire; 
-    }
-    var arrToSortN=msort.call(arrToSort,comparator);
-    tBody.prepend.apply(tBody,arrToSortN);
-  }
-
-  el.sortByNVote=function(boAscT){ 
-    boAsc=boAscT;  thSorted=thNVote;
-    arrImgSort.forEach(ele=>ele.prop({src:uUnsorted}) );
-    var tmp=boAsc?uIncreasing:uDecreasing;  thNVote.children[0].prop({src:tmp});
-    
-    var arrT=tBody.querySelectorAll('tr'), arrToSort=[...arrT];
-    var iChild=1;
-    var comparator=function(aT, bT){
-      var a=aT.children[iChild].myText(),  b=bT.children[iChild].myText();
-      a=Number(a); b=Number(b);
-      var dire=boAsc?1:-1;
-      return (a-b)*dire;
-    }
-    var arrToSortN=msort.call(arrToSort,comparator);
-    tBody.prepend.apply(tBody,arrToSortN);
-  }
-
-  el.sortByUserVote=function(boAscT){
-    boAsc=boAscT; thSorted=spanThUserVote;
-    arrImgSort.forEach(ele=>ele.prop({src:uUnsorted}) );
-    var tmp=boAsc?uIncreasing:uDecreasing;  spanThUserVote.children[0].prop({src:tmp});
+    var tmp=boAsc?uIncreasing:uDecreasing;  this.children[0].prop({src:tmp});
 
     var arrT=tBody.querySelectorAll('tr'), arrToSort=[...arrT];
-    var iChild=2;
-    var comparator=function(aT, bT){
-      var a=aT.children[iChild].children[0].prop('checked'),  b=bT.children[iChild].children[0].prop('checked');
+    var iCol=this.iCol; // One of the headercells spans two columns, so iChild!=iCol
+    var comparator=function(aRow, bRow){
+      var aCell=aRow.children[iCol], bCell=bRow.children[iCol]; 
+      var a,b; if('sortValF' in aCell) { a=aCell.sortValF(); b=bCell.sortValF(); } else {a=aCell.textContent; b=bCell.textContent;}
       var dire=boAsc?1:-1;
       if(a==b) {return 0;} else return a>b?dire:-dire;    
     }
@@ -743,40 +680,32 @@ var summaryDivExtend=function(el){
     tBody.prepend.apply(tBody,arrToSortN);
   }
   
-  
-  var boAsc=false,thSorted=null; 
   var colStaple='#f70';
 
   var arrImgSort=[createElement('img'), createElement('img'), createElement('img')]; arrImgSort.forEach(ele=>ele.prop({src:uUnsorted}).css({margin:'0 0.3em'}));
   
-  var thName=createElement('th').myAppend(langHtml.Option,arrImgSort[0]);  thName.boAscDefault=1;
-  thName.on('click', function(){ 
-     boAsc=(thSorted===this)?!boAsc:this.boAscDefault;   el.sortByName(boAsc);});
-
-  var imgH=imgHelp.cloneNode().css({'margin-left':'1em'});  popupHover(imgH,createElement('div').myText('Figures and staples are updated once a day'));          
-  if(!site.boUseSnapShot) {   imgH=''; }
-  
-  var thNVote=createElement('th').prop({colspan:2}).myAppend(langHtml.Votes,arrImgSort[1],imgH);       thNVote.boAscDefault=0; 
-  thNVote.on('click', function(){  boAsc=(thSorted===this)?!boAsc:this.boAscDefault;   el.sortByNVote(boAsc);});
-
-  var spanThUserVote=createElement('span').myAppend(langHtml.YourVote,arrImgSort[2]);   
-  var thUserVote=createElement('th').myAppend(spanThUserVote).css({'text-align':'center','padding-left':'1em'});  thUserVote.boAscDefault=0;
-  spanThUserVote.on('click', function(){  boAsc=(thSorted===this)?!boAsc:this.boAscDefault;   el.sortByUserVote(boAsc);});
-
-
-
+  var thName=createElement('th').myAppend(langHtml.Option,arrImgSort[0]).on('click', thClick).prop({iCol:0});
+  var thNVote=createElement('th').myAppend(langHtml.Votes,arrImgSort[1]).on('click', thClick).prop({colSpan:2, iCol:1});
+  var thUserVote=createElement('th').myAppend(langHtml.YourVote, arrImgSort[2]).on('click', thClick).prop({iCol:1}).css({'text-align':'center','padding-left':'1em'});
 
   var heads=[thName, thNVote, thUserVote]; heads.forEach(ele=>ele.css({cursor:'pointer'}));
-  var tHead=createElement('thead').myAppend(createElement('tr').myAppend(thName,thNVote,thUserVote));
+  var tHead=createElement('thead').myAppend(createElement('tr').myAppend(...heads));
   var tBody=createElement('tbody');
   var table=createElement('table').myAppend(tHead,tBody).css({'margin-top':'1em'});
   
+  
+  var sortValFName=function(){return this.myText().toLowerCase();}
+  var sortValFCB=function(){return this.children[0].checked;}
+  
   for(var i=0;i<nOption;i++){
-    var nVotes=createElement('td');
     var bar=createElement('span').css({background:colStaple,height:'1em',display:'inline-block',position:'relative',bottom:'-1px'});
-    var cbT=createElement('input').prop({type:'checkbox'}).attr({ind:i}); 
+    var cbT=createElement('input').prop({type:'checkbox', ind:i}); 
     
-    var tr=createElement('tr').myAppend(createElement('td').myAppend(arrOption[i]), nVotes, createElement('td').myAppend(bar), createElement('td').myAppend(cbT)); tr.ind=i;
+    var tdOptionName=createElement('td').myAppend(arrOption[i]).prop({sortValF:sortValFName});
+    var tdNVotes=createElement('td');
+    var tdCB=createElement('td').myAppend(cbT).prop({sortValF:sortValFCB});
+    
+    var tr=createElement('tr').myAppend(tdOptionName, tdNVotes, createElement('td').myAppend(bar), tdCB); tr.ind=i;
     tBody.append(tr);
   }
   var trs=[...tBody.querySelectorAll('tr')];
@@ -944,27 +873,6 @@ var moreDivExtend=function(el){
 }
 
 
-var settingDivExtend=function(el){
-  var save=function(){ 
-    var o={};
-    var vec=[['DUpdate',o,el.setUp]];   majax(oAJAX,vec);
-  }
-
-  el.setUp=function(){
-    //userInfoFrDB.voter;
-  }
-
-  var buttonSave=createElement('button').myText(langHtml.Save).on('click', save);
-  var buttonBack=createElement('button').on('click', historyBack).myAppend(langHtml.Back).css({'margin-right':'1em'});
-  var topDiv=createElement('div').myAppend(buttonBack,buttonSave).css({padding:'0 0.3em','margin-top':'1em',overflow:'hidden'});
-  el.prepend(topDiv);
-  return el;
-}
-
-
-
-
-
 /*******************************************************************************************************************
  * LoadTab-callbacks
  *******************************************************************************************************************/
@@ -1125,7 +1033,6 @@ var colsFlip=array_flip(KeyCol);
 var StrOrderFiltFlip=array_flip(StrOrderFilt);
 var strFirstSort=site.strFirstSort;
 var boAscFirstSort=site.boAscFirstSort;
-var maxVotes=site.maxVotes||1;
 var arrOption=site.Option, nOption=arrOption.length;
 var boAppIP=site.typeApp=='ip';
 var boAppGoogle=site.typeApp=='google';
@@ -1143,7 +1050,7 @@ var CSRFCode='';
 
 var curTime=0;
 
-langHtml.MaxXVotes=langHtml.MaxXVotes.replace(/<span><\/span>/,maxVotes);  if(maxVotes==1) langHtml.MaxXVotes=langHtml.OnlyOneVote;
+//langHtml.MaxXVotes=langHtml.MaxXVotes.replace(/<span><\/span>/,maxVotes);  if(maxVotes==1) langHtml.MaxXVotes=langHtml.OnlyOneVote;
 
 
 //uCanonical=location.origin;
@@ -1319,7 +1226,6 @@ filterDiv.css({'background-color':'#eee','padding-bottom':'0.6em'});
   // voterListDivs  
 var columnSelectorDiv=createElement('div');//columnSelectorDivExtend(createElement('div'));
 var columnSorterDiv=createElement('div');//columnSorterDivExtend(createElement('div'));
-var settingDiv=settingDivExtend(createElement('div')); 
 var voterInfoDiv=voterInfoDivExtend(createElement('div'));
 
 var iframeLike=createElement('iframe');
@@ -1349,7 +1255,7 @@ voterInfoDiv.createContainers();
 
 
 
-var MainDiv=[loginInfo, H1, summaryDiv, voterListHead, voterListDiv, filterDiv, settingDiv, adminDiv, voterInfoDiv, moreDiv, columnSelectorDiv, columnSorterDiv, loginPop];
+var MainDiv=[loginInfo, H1, summaryDiv, voterListHead, voterListDiv, filterDiv, adminDiv, voterInfoDiv, moreDiv, columnSelectorDiv, columnSorterDiv, loginPop];
 
 
 var tmpCss={'border-top':'1px solid white', 'margin-left':'auto','margin-right':'auto','text-align':'left',background:'#fff'};   MainDiv.forEach(ele=>ele.css(tmpCss));
@@ -1399,11 +1305,6 @@ voterListDiv.setVis=function(){
 filterDiv.setVis=function(){
   MainDivsTogglable.forEach(ele=>ele.hide()); this.show();
   filterDiv.filterInfoWrap.append(filterInfoSpan);
-  return true;
-}
-settingDiv.setVis=function(){
-  if(!userInfoFrDB.voter || !userInfoFrIP.IP) return false;
-  MainDivsTogglable.forEach(ele=>ele.hide()); this.show();
   return true;
 }
 voterInfoDiv.setVis=function(){
