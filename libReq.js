@@ -715,7 +715,7 @@ app.SetupSqlT.prototype.createDummies=function(SiteName){
 
   //if(siteName=='demo') nData=500;
   if(site.wwwSite.substr(0,5)=='demo.') nData=50;
-  if(boLocal) nData=5;
+  if(boLocal) nData=250000;
 
   var StringData=['IP', 'idIP', 'nameIP', 'nickIP', 'homeTown', 'state', 'locale', 'gender'];  // Features whose value should be surronded by "'"
 
@@ -819,7 +819,7 @@ app.SetupSqlT.prototype.truncate=function(SiteName){
       SqlTableTruncate.push("ALTER TABLE "+StrTabName[i]+" AUTO_INCREMENT = 1");
     }
     SqlTableTruncate.push('UNLOCK TABLES');
-    SqlTableTruncate.push('SET FOREIGN_KEY_CHECKS=1;');
+    SqlTableTruncate.push('SET FOREIGN_KEY_CHECKS=1');
   }
   return SqlTableTruncate;
 }
@@ -867,7 +867,7 @@ app.SetupSqlT.prototype.doQuery=function*(flow, strCreateSql){
 
 
 var createMessTextOfMultQuery=function(Sql, err, results){
-  var nSql=Sql.length, nResults='na'; if(results instanceof Array) nResults=results.length;
+  var nSql=Sql.length, nResults='(single query)'; if(results instanceof Array) nResults=results.length;
   var StrMess=[];   StrMess.push('nSql='+nSql+', nResults='+nResults);
   if(err){
     StrMess.push('err.index: '+err.index+', err: '+err);

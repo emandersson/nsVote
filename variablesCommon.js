@@ -85,6 +85,9 @@ arrOptionDefault=['yes','no'];
 Plugin.general=function(){
   var Prop=this.Prop;
   
+  var arrTCreatedLabel=[0, 1, 2, 4, 6, 9, 12, 18, 24, 36, 48], arrTCreatedMin=[].concat(eMultSc(arrTCreatedLabel,sPerMonth)); arrTCreatedLabel.splice(-1,1, '≥48');
+  var arrTLastActivityLabel=[0, 1, 2, 4, 8, 15, 30, 60, 180, 365], arrTLastActivity=[].concat(eMultSc(arrTLastActivityLabel,3600)); arrTLastActivityLabel.splice(-1,1, '≥365');
+  
   //                         0123456789
   var tmp={
   idUser:                {b:'0011000110',type:'int(4)',other:'auto_increment'},
@@ -99,8 +102,10 @@ Plugin.general=function(){
   //StrOrderDB=['index', 'idUser', 'IP', 'idIP', 'boShow', 'created', 'posTime', 'histActive', 'tLastWriteOfTA', 'timeAccumulated', 'hideTimer', 'terminationDate', 'displayName', 'tel', 'link', 'homeTown', 'currency', 'lastPriceChange', 'x', 'y', 'nMonthsStartOffer', 'nPayment', 'imTag', 'imTagTeam', 'idTeam', 'idTeamWanted', 'boImgOwn', 'linkTeam', 'nReport', 'coordinatePrecisionM', 'dist', 'image']
 
   Prop.choise.feat={kind:'BF',boUseInd:1,bucket:this.Option||arrOptionDefault};
-  Prop.created.feat={kind:'S11',min:[0, 1, 2, 4, 6, 9, 12, 18, 24, 36, 48]};
-  Prop.lastActivity.feat={kind:'S11',min:[0, 1, 2, 4, 8, 15, 30, 60, 180, 365]};
+  //Prop.created.feat={kind:'S11',min:[0, 1, 2, 4, 6, 9, 12, 18, 24, 36, 48]};
+  //Prop.lastActivity.feat={kind:'S11',min:[0, 1, 2, 4, 8, 15, 30, 60, 180, 365]};
+  Prop.created.feat={kind:'S11',min:arrTCreatedMin, bucketLabel:arrTCreatedLabel};
+  Prop.lastActivity.feat={kind:'S11',min:arrTLastActivity, bucketLabel:arrTLastActivityLabel};
 
   //Prop.choise.pre='c.';
 
@@ -111,11 +116,15 @@ Plugin.general=function(){
   Prop.choise.binKeyF=function(name){ return "choise";};
   Prop.choise.binValueF=function(name){ return "SUM(choise IS NOT NULL)";};
 
-  Prop.created.cond0F=function(name, val){  val="DATE_SUB(now(), INTERVAL "+val+" MONTH)"; return name+"<="+val;};  
-  Prop.lastActivity.cond0F=function(name, val){  val="DATE_SUB(now(), INTERVAL "+val+" DAY)"; return name+"<="+val;}; 
+  //Prop.created.cond0F=function(name, val){  val="DATE_SUB(now(), INTERVAL "+val+" MONTH)"; return name+"<="+val;};  
+  //Prop.lastActivity.cond0F=function(name, val){  val="DATE_SUB(now(), INTERVAL "+val+" DAY)"; return name+"<="+val;}; 
+  Prop.created.cond0F=function(name, val){  return "UNIX_TIMESTAMP("+name+")<=UNIX_TIMESTAMP(now())-"+val; };
+  Prop.lastActivity.cond0F=function(name, val){  return "UNIX_TIMESTAMP("+name+")<=UNIX_TIMESTAMP(now())-"+val; };
    
-  Prop.created.cond1F=function(name, val){ val="DATE_SUB(now(), INTERVAL "+val+" MONTH)"; return name+">"+val;};
-  Prop.lastActivity.cond1F=function(name, val){ val="DATE_SUB(now(), INTERVAL "+val+" DAY)"; return name+">"+val;};
+  //Prop.created.cond1F=function(name, val){ val="DATE_SUB(now(), INTERVAL "+val+" MONTH)"; return name+">"+val;};
+  //Prop.lastActivity.cond1F=function(name, val){ val="DATE_SUB(now(), INTERVAL "+val+" DAY)"; return name+">"+val;};
+  Prop.created.cond1F=function(name, val){ return "UNIX_TIMESTAMP("+name+")>UNIX_TIMESTAMP(now())-"+val; };
+  Prop.lastActivity.cond1F=function(name, val){ return "UNIX_TIMESTAMP("+name+")>UNIX_TIMESTAMP(now())-"+val; };
 
   Prop.created.selOneF=selTimeF;  //function(){ return "UNIX_TIMESTAMP(u.created)";};  
   Prop.lastActivity.selOneF=selTimeF;
@@ -126,8 +135,10 @@ Plugin.general=function(){
   Prop.lastActivity.selF=selTimeF;
   Prop.IP.selF=selEnumF;
 
-  Prop.created.histCondF=function(name){ return "floor((-UNIX_TIMESTAMP(u.created)+UNIX_TIMESTAMP(now()))/"+sPerMonth+")";};
-  Prop.lastActivity.histCondF=function(name){ return "floor((-UNIX_TIMESTAMP(u.lastActivity)+UNIX_TIMESTAMP(now()))/"+sPerDay+")";};
+  //Prop.created.histCondF=function(name){ return "floor((-UNIX_TIMESTAMP(u.created)+UNIX_TIMESTAMP(now()))/"+sPerMonth+")";};
+  //Prop.lastActivity.histCondF=function(name){ return "floor((-UNIX_TIMESTAMP(u.lastActivity)+UNIX_TIMESTAMP(now()))/"+sPerDay+")";};
+  Prop.created.histCondF=function(name){ return "UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(u.created)";};
+  Prop.lastActivity.histCondF=function(name){ return "UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(u.lastActivity)";};
 
   Prop.IP.voterUpdF=updEnumBoundF;
   Prop.created.voterUpdF=updTimeF;  

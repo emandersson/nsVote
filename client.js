@@ -650,11 +650,11 @@ var summaryDivExtend=function(el){
   }
   el.setHist=function(){   
     //var iFeat=featNameFlip.choise;
-    var iFeat=colsFlip.choise, HistT=filterDiv.divCont.Hist; 
-    var maxV=arr_max(HistT[iFeat]), fac=1;  if(maxV>objFilterSetting.maxStaple) fac=maxStaple/maxV; 
+    var iFeat=colsFlip.choise, histT=filterDiv.divCont.Hist[iFeat]; 
+    var maxV=arr_max(histT[1].concat(1)), fac=1;  if(maxV>objFilterSetting.maxStaple) fac=objFilterSetting.maxStaple/maxV; 
     tdNVote.forEach(function(ele,i){
       var td=tdNVote[i];
-      var nVotes=0, iTmp=HistT[iFeat][0].indexOf(i); if(iTmp!=-1) nVotes=HistT[iFeat][1][iTmp];
+      var nVotes=0, iTmp=histT[0].indexOf(i); if(iTmp!=-1) nVotes=histT[1][iTmp];
       var width=Math.ceil(nVotes*fac);
       td.myText(nVotes);  tdBars[i].css({width:width+'px'}); //arrChoiseButtons[i].setStat(boOn);
     });
