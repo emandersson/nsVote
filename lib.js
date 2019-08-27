@@ -232,7 +232,7 @@ app.UTC2ReadableDiff=function(tdiff,boLong,boArr){
     return tmp;
   }
 }
-
+Date.prototype.floorDay=function(){ this.setHours(0); this.setMinutes(0); this.setSeconds(0); this.setMilliseconds(0); return this;}
 
 
 
@@ -304,5 +304,11 @@ app.degreesToRadians=function(deg) {  return deg*(Math.PI/180);  }
 app.radiansToDegrees=function(rad) {  return rad/(Math.PI/180);  }
 
 
+//
+// Data Formatting
+//
 
+app.deserialize=function(serializedJavascript){
+  return eval('(' + serializedJavascript + ')');
+}
 

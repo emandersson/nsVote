@@ -84,7 +84,7 @@ ReqBE.prototype.go=function*(){
       // Assign boCheckCSRF and boSetNewCSRF
     boCheckCSRF=0; boSetNewCSRF=0;   for(var i=0; i<beArr.length; i++){ var row=beArr[i]; if(in_array(row[0],arrCSRF)) {  boCheckCSRF=1; boSetNewCSRF=1;}  }    
     if(StrComp(StrInFunc,['specSetup'])){ boCheckCSRF=0; boSetNewCSRF=1; }
-    if(StrComp(StrInFunc,['specSetup']) || StrComp(StrInFunc,['specSetup', 'setUpCond','setUp', 'getList','getHist']))
+    if(StrComp(StrInFunc,['specSetup']) || StrComp(StrInFunc,['specSetup', 'setUp', 'setUpCond', 'getList', 'getHist']))
         { boCheckCSRF=0; boSetNewCSRF=1; }
 
   }
@@ -183,18 +183,17 @@ ReqBE.prototype.setUpCond=function*(inObj){
   var Ou={};
   if(typeof inObj.Filt!='object') return [new ErrorClient('typeof inObj.Filt!="object"')]; 
   this.Filt=inObj.Filt;
+  
   var arg={KeySel:site.KeySel, Prop:Prop, Filt:inObj.Filt};  //, StrOrderFilt:StrOrderFilt
   var tmp=setUpCond(arg);
   copySome(this,tmp,['strCol', 'Where']);
   return [null, [Ou]];
 }
 
-
-
-
 ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (curTime).
   var req=this.req, flow=req.flow, siteName=req.siteName, site=req.site;
-  var userTab=site.TableName.userTab;
+  var TableName=site.TableName;
+  var {userTab, userSnapShotTab}=site.TableName;
   
   var Ou={},  Sql=[];
   Sql.push("SELECT UNIX_TIMESTAMP(now()) AS now;");
@@ -202,6 +201,33 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (curTim
   var sql=Sql.join('\n'), Val=[];
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
   this.GRet.curTime=results[0].now; 
+  
+  var tNowRewrite=null;  // null => mysql uses built in "now()"
+  if(boUseSnapShot){
+    var tNow=unixNow(); 
+    var redisVar=strAppName+'TSnapShot', tSnapShot=yield* getRedis(flow, redisVar, 1)||0;
+    var boCopy=tNow>tSnapShot+ageMaxSnapShot;    // If too much time has elapsed then "copy".
+    if(boCopy){
+      console.log('Making snapshot...');
+      var sql=`CALL copyTable('`+userSnapShotTab+`','`+userTab+`');`, Val=[ageMaxSnapShot];
+      var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
+      var tSnapShot=unixNow();
+      yield* setRedis(flow, redisVar, tSnapShot);
+      console.log('Made snapshot');
+    }
+    tNowRewrite=tSnapShot;
+  }
+  else if(boUseLastWriteNow){   
+    var redisVar=strAppName+'TLastWrite', tLastWrite=yield* getRedis(flow, redisVar, 1)||0;
+    if(!tLastWrite) {
+      tLastWrite=unixNow(); yield* setRedis(flow, redisVar, tLastWrite);
+    }
+    tNowRewrite=tLastWrite;
+  }
+  //site.tNow=tNow;
+  site.Prop.created.tNow=tNowRewrite;
+  site.Prop.lastActivity.tNow=tNowRewrite;
+    
   return [null, [Ou]];
 }  
 
@@ -214,31 +240,30 @@ ReqBE.prototype.getList=function*(inObj){
   Ou.tab=[];this.NVoter=[0,0];
 
   var {userTab}=site.TableName;
+  if(boUseSnapShot){  userTab=TableName.userSnapShotTab; }
 
   var offset=Number(inObj.offset), rowCount=Number(inObj.rowCount);
-  var Sql=[];
+  var Val=[];
   var strCond=array_filter(this.Where).join(' AND '); if(strCond.length) strCond=' WHERE '+strCond;
-  Sql.push("SELECT SQL_CALC_FOUND_ROWS "+strCol+" FROM "+userTab+" u "+strCond+" GROUP BY u.idUser ORDER BY lastActivity DESC LIMIT "+offset+","+rowCount+";"); 
-  Sql.push("SELECT FOUND_ROWS() AS n;"); // nFound
-
-  Sql.push("SELECT count(*) AS n FROM "+userTab+";"); // nUnFiltered
-
-  var sql=Sql.join('\n'), Val=[];
-  //console.log(sql); 
+  var sql="SELECT SQL_CALC_FOUND_ROWS "+strCol+" FROM "+userTab+" u "+strCond+" GROUP BY u.idUser ORDER BY lastActivity DESC LIMIT "+offset+","+rowCount+";", Val=[];
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
-  var nFound=results[1][0].n;
 
-  for(var i=0;i<results[0].length;i++) {
-    var row=results[0][i], len=site.KeySel.length;
+
+  for(var i=0;i<results.length;i++) {
+    var row=results[i], len=site.KeySel.length;
     var rowN=Array(len); //for(var j=0;j<len;j++) { rowN[j]=row[j];}
     for(var j=0;j<len;j++){ var key=site.KeySel[j]; rowN[j]=row[key]; }
     //rowN[jMyVote]=[];
-    Ou.tab.push(rowN);        
+    Ou.tab.push(rowN);
   }  
-  this.Str.push("Found: "+nFound);  
-  Ou.NVoter=[nFound, results[2][0].n];
 
-  
+  var sql="SELECT FOUND_ROWS() AS n;", Val=[]; // nFound
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
+  var nFound=results[0].n;   this.Str.push("Found: "+nFound);
+
+  var sql="SELECT count(*) AS nTot FROM "+userTab+";", Val=[];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
+  Ou.NVoter=[nFound, results[0].nTot];
 
   return [null, [Ou]];
 }
@@ -250,6 +275,7 @@ ReqBE.prototype.getHist=function*(inObj){
 
   var Ou={};
   var {userTab}=TableName;
+  if(boUseSnapShot){  userTab=TableName.userSnapShotTab; }
 
   //var strTableRef=userTab+" u JOIN "+choiseTab+" c ON u.idUser=c.idUser "; 
   var strTableRef=userTab+" u "; 
@@ -258,7 +284,8 @@ ReqBE.prototype.getHist=function*(inObj){
   copySome(arg, site, ['Prop']);
   copySome(arg, this, ['myMySql', 'Filt', 'Where']);
   arg.strDBPrefix=req.siteName;
-  var [err, Hist]=yield* getHist(flow, arg); if(err) return [err];
+  var histCalc=new HistCalc(arg);
+  var [err, Hist]=yield* histCalc.getHist(flow, arg); if(err) return [err];
   Ou.Hist=Hist;
   return [null, [Ou]];
 }
@@ -361,6 +388,7 @@ ReqBE.prototype.UUpdate=function*(inObj){ // writing needSession
   var c=results.affectedRows; boUInsert=c==1; 
   console.log('affectedRows: '+results.affectedRows);
 
+  yield* setRedis(flow, strAppName+'TLastWrite', unixNow());
 
     // How to detect whether there was an insert or update: Check affected rows (the result depends on whether auto_increment was set):    
     //                    insert   |   update
@@ -389,7 +417,9 @@ ReqBE.prototype.UDelete=function*(inObj){ // writing needSession
   var sql=Sql.join('\n');
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
 
-  this.mes('deleted');      
+  this.mes('deleted');
+  
+  yield* setRedis(flow, strAppName+'TLastWrite', unixNow());  
 
   //resetSessionMain.call(this);
   this.sessionCache={userInfoFrDB:extend({},specialistDefault),   userInfoFrIP:{}};

@@ -322,7 +322,7 @@ else {
 }
 
 ReqLoginBack.prototype.adminFun=function*(){
-  var req=this.req, res=this.res, {userTab, adminTab}=this.site.TableName;
+  var req=this.req, flow=req.flow, res=this.res, {userTab, adminTab}=this.site.TableName;
   var IP=this.IP, idIP=this.idIP;
    
   var Sql=[], Val=[IP, idIP];
@@ -330,6 +330,8 @@ ReqLoginBack.prototype.adminFun=function*(){
   Sql.push("INSERT INTO "+adminTab+" VALUES (LAST_INSERT_ID(),0,now()) ON DUPLICATE KEY UPDATE created=VALUES(created);");
   var sql=Sql.join('\n');
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err]; 
+  
+  //yield* setRedis(flow, strAppName+'TLastWrite', unixNow());
   return [null,0];
   //var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) { res.out500(err); callback('exited'); return; }
   //callback(null,0);
@@ -448,19 +450,16 @@ app.reqMonitor=function*(){
 
 
 /******************************************************************************
- * SetupSqlT
+ * SetupSql
  ******************************************************************************/
-app.SetupSqlT=function(){
+app.SetupSql=function(){
 }
-app.SetupSqlT.prototype.createTable=function(SiteName,boDropOnly){
-  if(typeof SiteName=='string') SiteName=[SiteName];
+app.SetupSql.prototype.createTable=function*(flow, siteName, boDropOnly){
+  var site=Site[siteName]; 
   
   var SqlTabDrop=[], SqlTab=[];
-  for(var iSite=0;iSite<SiteName.length;iSite++){
-  var siteName=SiteName[iSite]
-  var site=Site[siteName]; 
   var {Prop, TableName, ViewName}=site;
-  var {settingTab, adminTab, userTab}=TableName; // , choiseTab, choiseSnapShotTab, userSnapShotTab
+  var {settingTab, adminTab, userTab, userSnapShotTab}=TableName; // , choiseTab, choiseSnapShotTab
   //eval(extractLoc(ViewName,'ViewName'));
 
   var StrTabName=object_values(TableName);
@@ -499,26 +498,26 @@ app.SetupSqlT.prototype.createTable=function(SiteName,boDropOnly){
   }
   var strSql=arrCols.join(",\n");
   
+  
+    // Create userTab and userSnapShotTab
+  var arrTmp=[userTab, userSnapShotTab];
+  for(var i=0;i<arrTmp.length;i++ ){
+    var userTabT=arrTmp[i];
+    SqlTab.push(`CREATE TABLE `+userTabT+` (
+    `+strSql+`,
+    PRIMARY KEY (idUser),
+    UNIQUE KEY (IP,idIP)
+    ) ENGINE=`+engine+` COLLATE `+collate); 
 
-  SqlTab.push(`CREATE TABLE `+userTab+` (
-  `+strSql+`,
-  PRIMARY KEY (idUser),
-  UNIQUE KEY (IP,idIP)
-  ) ENGINE=`+engine+` COLLATE `+collate); 
-
-
-
-    // Create indexes
-  for(var name in Prop){
-  //for(var i=0;i<StrDBCol.length;i++){
-    //var name=StrDBCol[i];
-    var arr=Prop[name];
-    var b=arr.b;
-    if(Number(b[bFlip.userTabIndex])){
-      if(0) SqlTab.push("CREATE INDEX "+name+"Index ON "+userTab+"("+name+")");
+      // Create indexes
+    for(var name in Prop){
+      var arr=Prop[name];
+      var b=arr.b;
+      if(Number(b[bFlip.userTabIndex])){
+        if(0) SqlTab.push("CREATE INDEX "+name+"Index ON "+userTabT+"("+name+")");
+      }
     }
   }
-
 
 
   SqlTab.push(`CREATE TABLE `+settingTab+` (
@@ -541,28 +540,30 @@ app.SetupSqlT.prototype.createTable=function(SiteName,boDropOnly){
 
   addBinTableSql(SqlTabDrop,SqlTab,siteName,Prop,engine,collate);
 
-  }
-  if(boDropOnly) return SqlTabDrop;
-  else return array_merge(SqlTabDrop, SqlTab);
+  
+  if(boDropOnly) var Sql=SqlTabDrop;
+  else var Sql=array_merge(SqlTabDrop, SqlTab);
+  
+  var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val);
+  writeMessTextOfMultQuery(Sql, err, results);
+  if(err) {  return [err]; }
+  return [null];
 }
 
 
-app.SetupSqlT.prototype.createFunction=function(SiteName,boDropOnly){
-  if(typeof SiteName=='string') SiteName=[SiteName];
+app.SetupSql.prototype.createFunction=function*(flow, siteName, boDropOnly){
+  var site=Site[siteName]; 
   
   var SqlFunctionDrop=[], SqlFunction=[];
-  for(var iSite=0;iSite<SiteName.length;iSite++){
-  var siteName=SiteName[iSite];
   
-  var site=Site[siteName]; 
   var {Prop, TableName, ViewName}=site;
-  var {settingTab, adminTab, userTab}=TableName; // , choiseTab, choiseSnapShotTab, userSnapShotTab
+  var {settingTab, adminTab, userTab, userSnapShotTab}=TableName; // , choiseTab, choiseSnapShotTab
   //eval(extractLoc(ViewName,'ViewName'));
 
 
+
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"condMakeSnapShot");
-
-
 
 
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS "+siteName+"dupMake");
@@ -591,15 +592,20 @@ app.SetupSqlT.prototype.createFunction=function(SiteName,boDropOnly){
         DROP TABLE IF EXISTS `+userTab+`_dup;
       END`);
 
-  }
-  var SqlA=this.funcGen(boDropOnly);
-  if(boDropOnly) var SqlB=SqlFunctionDrop;
-  else var SqlB=array_merge(SqlFunctionDrop, SqlFunction);
-  return array_merge(SqlA, SqlB);
+  
+  if(boDropOnly) var Sql=SqlFunctionDrop;
+  else var Sql=array_merge(SqlFunctionDrop, SqlFunction);
+  
+  
+  var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val);
+  writeMessTextOfMultQuery(Sql, err, results);
+  if(err) {  return [err]; }
+  return [null];
 }
 
 
-app.SetupSqlT.prototype.funcGen=function(boDropOnly){
+app.SetupSql.prototype.funcGen=function*(flow, boDropOnly){
   var SqlFunction=[], SqlFunctionDrop=[];
   SqlFunctionDrop.push("DROP PROCEDURE IF EXISTS copyTable");
   SqlFunction.push(`CREATE PROCEDURE copyTable(INameN varchar(128),IName varchar(128))
@@ -609,22 +615,23 @@ app.SetupSqlT.prototype.funcGen=function(boDropOnly){
       SET @q=CONCAT('INSERT INTO ',INameN, ' SELECT * FROM ',IName,';');    PREPARE stmt1 FROM @q;  EXECUTE stmt1;  DEALLOCATE PREPARE stmt1;
     END`);
 
-  if(boDropOnly) return SqlFunctionDrop;
-  else return array_merge(SqlFunctionDrop, SqlFunction);
+  if(boDropOnly) var Sql=SqlFunctionDrop;
+  else var Sql=array_merge(SqlFunctionDrop, SqlFunction);
+  
+  var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val);
+  writeMessTextOfMultQuery(Sql, err, results);
+  if(err) {  return [err]; }
+  return [null];
 }
 
 
 
 
-app.SetupSqlT.prototype.createDummies=function(SiteName){
-  if(typeof SiteName=='string') SiteName=[SiteName];
-  
-  var SqlDummies=[];
-  for(var iSite=0;iSite<SiteName.length;iSite++){
-  var siteName=SiteName[iSite];
-
+app.SetupSql.prototype.createDummies=function*(flow, siteName){
   var site=Site[siteName]; 
-
+  
+  var Sql=[];
   var arrAddress=[];
   //arrAddress.push({country:'Sweden', homeTown:'Uppsala', currency:'SEK', x:140.51976455111, y:74.570362445619, n:5, std:0.1, locale:'sv', state:'Sweden', timezone:1});
   //arrAddress.push({country:'Sweden', homeTown:'Stockholm', currency:'SEK', x:140.84200964814016, y:75.28506309708814, n:5, std:0.01, locale:'sv', state:'Sweden', timezone:1});
@@ -691,7 +698,7 @@ app.SetupSqlT.prototype.createDummies=function(SiteName){
 
   var {Prop, TableName, ViewName}=site;
   var Enum={};   for(var name in Prop) {if('Enum' in Prop[name]) Enum[name]=Prop[name].Enum.concat([]); }   //extend(Enum,site.Enum);
-  var {settingTab, adminTab, userTab}=TableName; // , choiseTab, choiseSnapShotTab, userSnapShotTab
+  var {settingTab, adminTab, userTab, userSnapShotTab}=TableName; // , choiseTab, choiseSnapShotTab
   //eval(extractLoc(ViewName,'ViewName'));
 
   
@@ -709,13 +716,19 @@ app.SetupSqlT.prototype.createDummies=function(SiteName){
   
   RandSpanData.choise=[0, Prop.choise.Enum.length-1];
 
+
+  var sql="SELECT MAX(idUser) AS nLast FROM "+userTab, Val=[];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) {  return [err]; }
+  var nLast=results[0].nLast;
+  var nFirst=nLast===null?1:nLast+1;
+  
   var nData=10;
   //var nData=1000;
   //var nData=10000;
 
   //if(siteName=='demo') nData=500;
   if(site.wwwSite.substr(0,5)=='demo.') nData=50;
-  if(boLocal) nData=250000;
+  if(boLocal) nData=100;
 
   var StringData=['IP', 'idIP', 'nameIP', 'nickIP', 'homeTown', 'state', 'locale', 'gender'];  // Features whose value should be surronded by "'"
 
@@ -740,9 +753,10 @@ app.SetupSqlT.prototype.createDummies=function(SiteName){
 
   var SqlAllU=[];  var SqlAllC=[];
   var AddressT={};
-  for(var i=1;i<nData+1;i++){  
-    var idTmp=i+1;  
-    var tmp="Dummy"+i, person={idUser:idTmp, IP:'openid', idIP:tmp, nameIP:tmp, nickIP:tmp, tel:"07000000"+i};
+  //for(var i=1;i<nData+1;i++){
+  for(var i=nFirst;i<nFirst+nData;i++){ 
+    //var idTmp=i+1;  
+    var tmp="Dummy"+i, person={idUser:i, IP:'openid', idIP:tmp, nameIP:tmp, nickIP:tmp, tel:"07000000"+i};
 
     var AddressT=extend(AddressT,getRandomPostAddress());
     AddressT.x+=gauss_ms(0,AddressT.std); AddressT.y+=gauss_ms(0,AddressT.std);   
@@ -777,106 +791,98 @@ app.SetupSqlT.prototype.createDummies=function(SiteName){
   }
 
   var tmp=SqlAllU.join(",");
-  SqlDummies.push("INSERT INTO "+userTab+" ( "+strName+") VALUES "+tmp);
-
+  Sql.push("INSERT INTO "+userTab+" ( "+strName+") VALUES "+tmp);
 
 
   //var tmp=SqlAllC.join(",");
-  //SqlDummies.push("INSERT INTO "+choiseTab+" (idUser,choise) VALUES "+tmp);
+  //Sql.push("INSERT INTO "+choiseTab+" (idUser,choise) VALUES "+tmp);
 
-  }
-  return SqlDummies;
+  var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) {  return [err]; }
+  return [null];
 }
 
 
-app.SetupSqlT.prototype.createDummy=function(SiteName){
-  if(typeof SiteName=='string') SiteName=[SiteName];
-  var SqlDummy=[];
-  return SqlDummy;
-}
-
-app.SetupSqlT.prototype.truncate=function(SiteName){
-  if(typeof SiteName=='string') SiteName=[SiteName];
-  
-  var SqlTableTruncate=[];
-  for(var iSite=0;iSite<SiteName.length;iSite++){
-    var siteName=SiteName[iSite]
-    var site=Site[siteName]; 
-
-    //var StrTabName=object_values(site.TableName);
-    var StrTabName=["setting","admin","user"]; //,"choise"
-    for(var i=0;i<StrTabName.length;i++){    StrTabName[i]=siteName+'_'+StrTabName[i];  }
-
-    var SqlTmp=[];
-    for(var i=0;i<StrTabName.length;i++){
-      SqlTmp.push(StrTabName[i]+" WRITE");
-    }
-    SqlTableTruncate.push('SET FOREIGN_KEY_CHECKS=0');
-    var tmp="LOCK TABLES "+SqlTmp.join(', ');
-    SqlTableTruncate.push(tmp);
-    for(var i=0;i<StrTabName.length;i++){
-      SqlTableTruncate.push("DELETE FROM "+StrTabName[i]);
-      SqlTableTruncate.push("ALTER TABLE "+StrTabName[i]+" AUTO_INCREMENT = 1");
-    }
-    SqlTableTruncate.push('UNLOCK TABLES');
-    SqlTableTruncate.push('SET FOREIGN_KEY_CHECKS=1');
-  }
-  return SqlTableTruncate;
-}
-
-
-app.SetupSqlT.prototype.populateSetting=function(SiteName){
-  if(typeof SiteName=='string') SiteName=[SiteName];
-  var SqlTab=[];
-  for(var iSite=0;iSite<SiteName.length;iSite++){
-  var siteName=SiteName[iSite];
+app.SetupSql.prototype.createDummy=function*(flow, siteName){
   var site=Site[siteName]; 
+  return [null];
+}
+
+app.SetupSql.prototype.truncate=function*(flow, siteName){
+  var site=Site[siteName]; 
+  var Sql=[]; 
+
+  //var StrTabName=object_values(site.TableName);
+  var StrTabName=["setting","admin","user"]; //,"choise"
+  var StrTabName=["admin","user"]; //,"choise"
+  for(var i=0;i<StrTabName.length;i++){    StrTabName[i]=siteName+'_'+StrTabName[i];  }
+
+  var SqlTmp=[];
+  for(var i=0;i<StrTabName.length;i++){
+    SqlTmp.push(StrTabName[i]+" WRITE");
+  }
+  Sql.push('SET FOREIGN_KEY_CHECKS=0');
+  var tmp="LOCK TABLES "+SqlTmp.join(', ');
+  Sql.push(tmp);
+  for(var i=0;i<StrTabName.length;i++){
+    Sql.push("DELETE FROM "+StrTabName[i]);
+    Sql.push("ALTER TABLE "+StrTabName[i]+" AUTO_INCREMENT = 1");
+  }
+  Sql.push('UNLOCK TABLES');
+  Sql.push('SET FOREIGN_KEY_CHECKS=1');
+  
+  var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
+  var [err, results]=yield* this.myMySql.query(flow, sql, Val);
+  writeMessTextOfMultQuery(Sql, err, results);
+  if(err) {  return [err]; }
+  return [null];
+}
+
+
+app.SetupSql.prototype.populateSetting=function*(flow, siteName){
+  var site=Site[siteName]; 
+  var Sql=[]; 
   var {TableName}=site, {settingTab}=TableName;
 
-  SqlTab.push(`INSERT INTO `+settingTab+` VALUES
-  ('tSnapShot','0'),
-  ('ageMaxSnapShot','`+ageMaxSnapShot+`')`); 
-  
-  }
-  return SqlTab;
+  //var strDelim=';', sql=Sql.join(strDelim+'\n')+strDelim, Val=[];
+  //var [err, results]=yield* this.myMySql.query(flow, sql, Val);  if(err) {  return [err]; }
+  return [null];
 }
 
 
   // Called when --sql command line option is used
-app.SetupSqlT.prototype.doQuery=function*(flow, strCreateSql){
-  //var StrValidSqlCalls=['createTable', 'dropTable', 'createFunction', 'dropFunction', 'populateSetting', 'truncate', 'createDummy', 'createDummies'];
-  if(StrValidSqlCalls.indexOf(strCreateSql)==-1){var tmp=strCreateSql+' is not valid input, try any of these: '+StrValidSqlCalls.join(', '); console.log(tmp); return; }
+app.SetupSql.prototype.doQuery=function*(flow, strCreateSql){
+  if(StrValidSqlCalls.indexOf(strCreateSql)==-1){var tmp=strCreateSql+' is not valid input, try any of these: '+StrValidSqlCalls.join(', '); return [new Error(tmp)]; }
   var Match=RegExp("^(drop|create)?(.*?)$").exec(strCreateSql);
-  if(!Match) { debugger;  return; }
+  if(!Match) { debugger;  return [new Error("!Match")]; }
   
   var boDropOnly=false, strMeth=Match[2];
   if(Match[1]=='drop') { boDropOnly=true; strMeth='create'+strMeth;}
   else if(Match[1]=='create')  { strMeth='create'+strMeth; }
   
-  this.myMySql=new MyMySql(DB.default.pool);
-  
-  var SqlA=this[strMeth](SiteName, boDropOnly);
-  var strDelim=';', sql=SqlA.join(strDelim+'\n')+strDelim, Val=[];
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val);
-  var tmp=createMessTextOfMultQuery(SqlA, err, results);  console.log(tmp);
-  this.myMySql.fin();
-  if(err){ debugger;  return; }
+  if(strMeth=='createFunction'){ 
+    var [err]=yield* this.funcGen(flow, boDropOnly); if(err){  return [err]; }  // Create common functions
+  }
+  for(var iSite=0;iSite<SiteName.length;iSite++){
+    var siteName=SiteName[iSite];
+    console.log(siteName);
+    var [err]=yield* this[strMeth](flow, siteName, boDropOnly);  if(err){  return [err]; }
+  }
+  return [null];
 }
 
-
-
-
-var createMessTextOfMultQuery=function(Sql, err, results){
+var writeMessTextOfMultQuery=function(Sql, err, results){
   var nSql=Sql.length, nResults='(single query)'; if(results instanceof Array) nResults=results.length;
-  var StrMess=[];   StrMess.push('nSql='+nSql+', nResults='+nResults);
+  console.log('nSql='+nSql+', nResults='+nResults);
+  var StrMess=[];
   if(err){
     StrMess.push('err.index: '+err.index+', err: '+err);
     if(nSql==nResults){
       var tmp=Sql.slice(bound(err.index-1,0,nSql), bound(err.index+2,0,nSql)),  sql=tmp.join('\n');
-      StrMess.push('Since "Sql" and "results" seem correctly aligned (has the same size), then here, in the middle, is printed the query with the corresponding index (surounded by the preceding and following query to get a context):\n'+sql); 
+      StrMess.push('Since "Sql" and "results" seem correctly aligned (has the same size), then 3 queries are printed (the preceding, the indexed, and following query (to get a context)):\n'+sql); 
     }
+    console.log(StrMess.join('\n'));
   }
-  return StrMess.join('\n');
 }
 
 

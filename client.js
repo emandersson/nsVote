@@ -441,7 +441,7 @@ var voterListDivExtend=function(el){
   }
   el.load=function(){ 
     setMess('... fetching data ... ',5,true);
-    var vec=[['setUpCond',{Filt:filterDiv.divCont.gatherFiltData()},voterListDiv.setUpCondRet],['setUp',{}],['getList',{offset:offset,rowCount:el.rowCount},el.getListRet]];   majax(oAJAX,vec);
+    var vec=[['setUp',{}],['setUpCond',{Filt:filterDiv.divCont.gatherFiltData()},voterListDiv.setUpCondRet],['getList',{offset:offset,rowCount:el.rowCount},el.getListRet]];   majax(oAJAX,vec);
   }
   el.setUpCondRet=function(data){ 
     var tmp=data.curTime;   if(typeof tmp!="undefined")  curTime=tmp;
@@ -884,7 +884,7 @@ var moreDivExtend=function(el){
 
 
 var loadTabNHist=function(){
-  var vec=[['setUpCond',{Filt:filterDiv.divCont.gatherFiltData()},voterListDiv.setUpCondRet], ['setUp',{}], ['getList',{offset:0,rowCount:voterListDiv.rowCount},voterListDiv.getListRet], ['getHist',{},getHistRet]];   majax(oAJAX,vec);
+  var vec=[['setUp',{}], ['setUpCond',{Filt:filterDiv.divCont.gatherFiltData()},voterListDiv.setUpCondRet], ['getList',{offset:0,rowCount:voterListDiv.rowCount},voterListDiv.getListRet], ['getHist',{},getHistRet]];   majax(oAJAX,vec);
     
   setMess('... fetching data ... ',0,true);
 }
@@ -1341,7 +1341,7 @@ if(boIOS) window.on('orientationchange', orientationChangeMy);
 else window.on('resize', orientationChangeMy);
 orientationChangeMy();
 
-var vec=[['specSetup',{}],['setUpCond',{Filt:filterDiv.divCont.gatherFiltData()},voterListDiv.setUpCondRet],['setUp',{}],['getList',{offset:0,rowCount:voterListDiv.rowCount},voterListDiv.getListRet],['getHist',null,getHistRet]];   majax(oAJAX,vec);
+var vec=[['specSetup',{}],['setUp',{}],['setUpCond',{Filt:filterDiv.divCont.gatherFiltData()},voterListDiv.setUpCondRet],['getList',{offset:0,rowCount:voterListDiv.rowCount},voterListDiv.getListRet],['getHist',null,getHistRet]];   majax(oAJAX,vec);
 setMess('... fetching data... ',0,true);
 
 

@@ -38,8 +38,7 @@ leafPayNotify="payNotify.js";
 
 
    // DB- tables
-StrTableKey=["setting","admin","user"];  //,"choise"
-StrTableKey=["setting","admin","user"]; //,"choise","user","choiseSnapShot","userSnapShot"
+StrTableKey=["setting","admin","user","userSnapShot"]; //,"choise","choiseSnapShot"
 StrViewsKey=[]; 
 TableNameProt={};for(var i=0;i<StrTableKey.length;i++) TableNameProt[StrTableKey[i]]='';
 ViewNameProt={};for(var i=0;i<StrViewsKey.length;i++) ViewNameProt[StrViewsKey[i]]='';
@@ -70,7 +69,6 @@ auto_increment_increment=1;
 
 maxVoterDisp=10;
 maxVotesDispInCol=2;
-ageMaxSnapShot=24*3600; // Max age of snapshot
 enumIP=['openid', 'fb', 'google'];
 
 enumGender=['male','female'];
@@ -102,8 +100,6 @@ Plugin.general=function(){
   //StrOrderDB=['index', 'idUser', 'IP', 'idIP', 'boShow', 'created', 'posTime', 'histActive', 'tLastWriteOfTA', 'timeAccumulated', 'hideTimer', 'terminationDate', 'displayName', 'tel', 'link', 'homeTown', 'currency', 'lastPriceChange', 'x', 'y', 'nMonthsStartOffer', 'nPayment', 'imTag', 'imTagTeam', 'idTeam', 'idTeamWanted', 'boImgOwn', 'linkTeam', 'nReport', 'coordinatePrecisionM', 'dist', 'image']
 
   Prop.choise.feat={kind:'BF',boUseInd:1,bucket:this.Option||arrOptionDefault};
-  //Prop.created.feat={kind:'S11',min:[0, 1, 2, 4, 6, 9, 12, 18, 24, 36, 48]};
-  //Prop.lastActivity.feat={kind:'S11',min:[0, 1, 2, 4, 8, 15, 30, 60, 180, 365]};
   Prop.created.feat={kind:'S11',min:arrTCreatedMin, bucketLabel:arrTCreatedLabel};
   Prop.lastActivity.feat={kind:'S11',min:arrTLastActivity, bucketLabel:arrTLastActivityLabel};
 
@@ -116,15 +112,15 @@ Plugin.general=function(){
   Prop.choise.binKeyF=function(name){ return "choise";};
   Prop.choise.binValueF=function(name){ return "SUM(choise IS NOT NULL)";};
 
-  //Prop.created.cond0F=function(name, val){  val="DATE_SUB(now(), INTERVAL "+val+" MONTH)"; return name+"<="+val;};  
-  //Prop.lastActivity.cond0F=function(name, val){  val="DATE_SUB(now(), INTERVAL "+val+" DAY)"; return name+"<="+val;}; 
-  Prop.created.cond0F=function(name, val){  return "UNIX_TIMESTAMP("+name+")<=UNIX_TIMESTAMP(now())-"+val; };
-  Prop.lastActivity.cond0F=function(name, val){  return "UNIX_TIMESTAMP("+name+")<=UNIX_TIMESTAMP(now())-"+val; };
+  //var tmpf=function(name, val){ return "UNIX_TIMESTAMP("+name+")<=UNIX_TIMESTAMP(now())-"+val; };
+  var tmpf=function(name,val){ var t=this.tNow; t=t!==null?t:"UNIX_TIMESTAMP(now())";   return "UNIX_TIMESTAMP("+name+")<="+t+"-"+val;  };
+  Prop.created.cond0F=tmpf;
+  Prop.lastActivity.cond0F=tmpf;
    
-  //Prop.created.cond1F=function(name, val){ val="DATE_SUB(now(), INTERVAL "+val+" MONTH)"; return name+">"+val;};
-  //Prop.lastActivity.cond1F=function(name, val){ val="DATE_SUB(now(), INTERVAL "+val+" DAY)"; return name+">"+val;};
-  Prop.created.cond1F=function(name, val){ return "UNIX_TIMESTAMP("+name+")>UNIX_TIMESTAMP(now())-"+val; };
-  Prop.lastActivity.cond1F=function(name, val){ return "UNIX_TIMESTAMP("+name+")>UNIX_TIMESTAMP(now())-"+val; };
+  //var tmpf=function(name, val){ return "UNIX_TIMESTAMP("+name+")>UNIX_TIMESTAMP(now())-"+val; };
+  var tmpf=function(name,val){ var t=this.tNow; t=t!==null?t:"UNIX_TIMESTAMP(now())";   return "UNIX_TIMESTAMP("+name+")>"+t+"-"+val;  };
+  Prop.created.cond1F=tmpf;
+  Prop.lastActivity.cond1F=tmpf;
 
   Prop.created.selOneF=selTimeF;  //function(){ return "UNIX_TIMESTAMP(u.created)";};  
   Prop.lastActivity.selOneF=selTimeF;
@@ -135,11 +131,11 @@ Plugin.general=function(){
   Prop.lastActivity.selF=selTimeF;
   Prop.IP.selF=selEnumF;
 
-  //Prop.created.histCondF=function(name){ return "floor((-UNIX_TIMESTAMP(u.created)+UNIX_TIMESTAMP(now()))/"+sPerMonth+")";};
-  //Prop.lastActivity.histCondF=function(name){ return "floor((-UNIX_TIMESTAMP(u.lastActivity)+UNIX_TIMESTAMP(now()))/"+sPerDay+")";};
-  Prop.created.histCondF=function(name){ return "UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(u.created)";};
-  Prop.lastActivity.histCondF=function(name){ return "UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(u.lastActivity)";};
-
+  //var tmpf=function(name){ return "UNIX_TIMESTAMP(now())-UNIX_TIMESTAMP(u."+name+")";};
+  var tmpf=function(name){ var t=this.tNow; t=t!==null?t:"UNIX_TIMESTAMP(now())";   return t+"-UNIX_TIMESTAMP(u."+name+")";  };
+  Prop.created.histCondF=tmpf;
+  Prop.lastActivity.histCondF=tmpf;
+  
   Prop.IP.voterUpdF=updEnumBoundF;
   Prop.created.voterUpdF=updTimeF;  
   Prop.lastActivity.voterUpdF=updTimeF;
