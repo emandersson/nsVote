@@ -27,18 +27,18 @@ var arrOptionSmartphone=['Android', 'iOS', 'Blackberry', 'Windows mobile', 'Symb
 
 
 
+boUseLastWriteNow=false;// Using last write time (of userTab) instead of "now()" in db-queries. 
+                        // Note, if boUseSnapShot (below) is true then boUseLastWriteNow is ignored.
+boUseSnapShot=false;    // Using snapShot table.
+ageMaxSnapShot=24*3600; // Max age of snapshot
 
   //
-  // This "if"-statement allows you to keep the same config-file for multiple infrastructure
-  //
-  // If you are running on:
-  //   * heroku.com, then create a environment variable strInfrastructure='heroku' 
-  //   * appfog.com, then create a environment variable strInfrastructure='af' 
-  //   * digitalocean.com, then create a environment variable strInfrastructure='do' 
-  //   * localhost, then you can enter your settings in the "else"-statement below
+  //  Since one might want use the software on several different infrastrucures (heroku.com, appfog.com, digitalocean.com, localhost ...),
+  //  then I personally use an environment variable "strInfrastructure" on respective site, set to either to 'heroku', 'af', 'do' or nothing assigned (localhost)
+  //  This way one can use the same config file for all the infrastructures.
   //
 
-if(process.env.strInfrastructure=='heroku'){
+if(process.env.strInfrastructure=='heroku'){ // heroku.com
 
     // UriDB: an object storing database urls
   UriDB={ 
@@ -119,7 +119,7 @@ if(process.env.strInfrastructure=='heroku'){
   levelMaintenance=0;
 
 }
-else if(process.env.strInfrastructure=='af'){
+else if(process.env.strInfrastructure=='af'){ // appfog.com
 
      // If you added the MySql-database on the appfog.com-interface then an entry "default" is added to   "UriDB".
   if('VCAP_SERVICES' in process.env) {
@@ -152,7 +152,7 @@ else if(process.env.strInfrastructure=='af'){
   //LevelMaintenance={ nsvTest:0};
   levelMaintenance=0;
 
-}else if(process.env.strInfrastructure=='do'){
+}else if(process.env.strInfrastructure=='do'){  // digitalocean.com
   UriDB={default:'mysql://user:password@localhost/database'};
   port = 8083;  
 
@@ -174,7 +174,7 @@ else if(process.env.strInfrastructure=='af'){
   //LevelMaintenance={demoOI:0};
   levelMaintenance=0;
 }
-else {
+else {  // localhost
   UriDB={myDB:'mysql://user:password@localhost/database'};
 
   RootDomain={
@@ -203,7 +203,6 @@ else {
       strTitle:strWhichStarWars, strH1:strWhichStarWars, metaDescription:strWhichStarWars,
       Option:arrOptionStarWars,
       strFirstSort:'nVote',
-      boAscFirstSort:0
     },
     demoGoogle:{
       wwwSite:wwwLocalhost, strRootDomain:"localhost", googleAnalyticsTrackingID:"", db:"myDB", typeApp:'google',boOpenVote:1, boTLS:0,

@@ -84,7 +84,6 @@ var flow=( function*(){
   boDbg=0; boAllowSql=1; port=5000; levelMaintenance=0; googleSiteVerification='googleXXX.html';
   wwwCommon='';
   maxUnactivity=24*60*60;  
-  //boUseSnapShot=0; 
   typeApp='ip'; 
   intDDOSMax=100; tDDOSBan=5; 
   
@@ -125,17 +124,14 @@ var flow=( function*(){
   SiteExtend();
 
     // Do db-query if --sql XXXX was set in the argument
-  //if(typeof argv.sql!='undefined'){
-    //var tTmp=new Date().getTime();
-    //var objSetupSql=new SetupSql(); objSetupSql.doQuery(argv.sql);
-    //console.log('Time elapsed: '+(new Date().getTime()-tTmp)/1000+' s'); 
-    //process.exit(0);
-  //}
-    // Do db-query if --sql XXXX was set in the argument
   if(typeof argv.sql!='undefined'){
     if(typeof argv.sql!='string') {console.log('sql argument is not a string'); process.exit(-1); return; }
     var tTmp=new Date().getTime();
-    var SetupSql=new SetupSqlT(); yield* SetupSql.doQuery(flow, argv.sql);
+    var setupSql=new SetupSql();
+    setupSql.myMySql=new MyMySql(DB.default.pool);
+    var [err]=yield* setupSql.doQuery(flow, argv.sql);
+    setupSql.myMySql.fin();
+    if(err) {  console.error(err);  return;}
     console.log('Time elapsed: '+(new Date().getTime()-tTmp)/1000+' s'); 
     process.exit(0);
   }
