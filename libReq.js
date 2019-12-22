@@ -371,13 +371,19 @@ app.reqStatic=function*() {
   var site=req.site; this.Str=[];
   var siteName=req.siteName;
   var pathName=req.pathName;
+  
+  //var RegAllowedOriginOfStaticFile=[RegExp("^https\:\/\/(closeby\.market|gavott\.com)")];
+  //var RegAllowedOriginOfStaticFile=[RegExp("^http\:\/\/(localhost|192\.168\.0)")];
+  var RegAllowedOriginOfStaticFile=[];
+  setAccessControlAllowOrigin(req, res, RegAllowedOriginOfStaticFile);
+  if(req.method=='OPTIONS'){ res.end(); return ;}
 
-  if('origin' in req.headers){ //if cross site
-    var http_origin=req.headers.origin, objUrl=url.parse(http_origin);
-    var boOK=0, keys=Object.keys(Site); for(var i=0;i<keys.length;i++){if(objUrl.host==Site[keys[i]].wwwSite) {boOK=1; break;} }; 
-    if(boOK) res.setHeader("Access-Control-Allow-Origin", http_origin);
-    if(req.method=='OPTIONS'){  res.end(); return;}
-  }
+  //if('origin' in req.headers){ //if cross site
+    //var http_origin=req.headers.origin, objUrl=url.parse(http_origin);
+    //var boOK=0, keys=Object.keys(Site); for(var i=0;i<keys.length;i++){if(objUrl.host==Site[keys[i]].wwwSite) {boOK=1; break;} }; 
+    //if(boOK) res.setHeader("Access-Control-Allow-Origin", http_origin);
+    //if(req.method=='OPTIONS'){  res.end(); return;}
+  //}
 
   var eTagIn=getETag(req.headers);
   var keyCache=pathName; if(pathName==='/'+leafSiteSpecific) keyCache=siteName+keyCache; 
