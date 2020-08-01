@@ -30,9 +30,10 @@ app.reqIndex=function*() {
   
   var Str=[];
   Str.push(`<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:og="http://ogp.me/ns#"
-      xmlns:fb="http://www.facebook.com/2008/fbml">`);
+<html lang="en"
+xmlns="http://www.w3.org/1999/xhtml"
+xmlns:og="http://ogp.me/ns#"
+xmlns:fb="http://www.facebook.com/2008/fbml">`);
   Str.push('<head>\n<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>');
 
 
@@ -46,14 +47,14 @@ app.reqIndex=function*() {
   var tmpIcon=wwwIcon114; if('wwwIcon114' in site) tmpIcon=site.wwwIcon114;  var uIcon114=req.strSchemeLong+tmpIcon;
   var tmpIcon=wwwIcon200; if('wwwIcon200' in site) tmpIcon=site.wwwIcon200;  var uIcon200=req.strSchemeLong+tmpIcon;
   Str.push('<link rel="icon" type="image/png" href="'+uIcon16+'" />');
-  Str.push('<link rel="apple-touch-icon-precomposed" href="'+uIcon114+'"/>');
+  Str.push('<link rel="apple-touch-icon" href="'+uIcon114+'"/>');
 
 
 
   var strTmp='';  //if(boAndroid && boFireFox) {  strTmp=", width=device-width'";}    
   var strTmpB=''; //if(boAndroid || boIOS) strTmpB=", user-scalable=no";
 
-  Str.push("<meta name='viewport' id='viewportMy' content='initial-scale=1"+strTmp+strTmpB+"'/>");
+  Str.push("<meta name='viewport' id='viewportMy' content='initial-scale=1'/>");
 
 
 
@@ -78,9 +79,10 @@ app.reqIndex=function*() {
   if(!boDbg) Str.push(tmp);
 
 
+  Str.push(`<script>var app=window;</script>`);
 
   var uCommon=''; if(wwwCommon) uCommon=req.strSchemeLong+wwwCommon;
-  var uJQuery='https://code.jquery.com/jquery-3.3.1.min.js';    if(boDbg) uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/jquery-3.3.1.min.js";
+  //var uJQuery='https://code.jquery.com/jquery-3.3.1.min.js';    if(boDbg) uJQuery=uCommon+'/'+flFoundOnTheInternetFolder+"/jquery-3.3.1.min.js";
   //Str.push('<script src="'+uJQuery+'" integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" crossorigin="anonymous"></script>');
  
     // If boDbg then set vTmp=0 so that the url is the same, this way the debugger can reopen the file between changes
@@ -92,12 +94,12 @@ app.reqIndex=function*() {
 
     // Include site specific JS-files
   var uSite=req.strSchemeLong+wwwSite;
-  var keyCache=siteName+'/'+leafSiteSpecific, vTmp=CacheUri[keyCache].eTag; if(boDbgT) vTmp=0;  Str.push('<script src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'"></script>');
+  var keyCache=siteName+'/'+leafSiteSpecific, vTmp=CacheUri[keyCache].eTag; if(boDbgT) vTmp=0;  Str.push('<script src="'+uSite+'/'+leafSiteSpecific+'?v='+vTmp+'" async></script>');
 
     // Include JS-files
   var StrTmp=['filter.js', 'lib.js', 'libClient.js', 'client.js', 'lang/en.js'];
   for(var i=0;i<StrTmp.length;i++){
-    var pathTmp='/'+StrTmp[i], vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<script src="'+uCommon+pathTmp+'?v='+vTmp+'"></script>');
+    var pathTmp='/'+StrTmp[i], vTmp=CacheUri[pathTmp].eTag; if(boDbgT) vTmp=0;    Str.push('<script src="'+uCommon+pathTmp+'?v='+vTmp+'" async></script>');
   }
 
     // Include plugins
@@ -292,7 +294,7 @@ ReqLoginBack.prototype.finF=function(err){
   
   var Str=this.Str;
   Str.push(`
-<html><head><meta name='robots' content='noindex'>
+<html lang="en"><head><meta name='robots' content='noindex'>
 </head>
 <body>
 <script>
@@ -434,7 +436,7 @@ app.reqMonitor=function*(){
   var nUser=site.nUser;
   var Str=this.Str;
   Str.push(`<!DOCTYPE html>
-<html><head><meta name="robots" content="noindex"></head>`);
+<html lang="en"><head><meta name="robots" content="noindex"></head>`);
   var strColor='';
   if('admin' in objQS && objQS.admin){
     if(boRefresh) strColor='lightgreen';

@@ -56,6 +56,10 @@ helpTextExit=function(){
 }
 
 
+var StrUnknown=AMinusB(Object.keys(argv),['_', 'h', 'help', 'p', 'port', 'sql']);
+var StrUnknown=[].concat(StrUnknown, argv._);
+if(StrUnknown.length){ console.log('Unknown arguments: '+StrUnknown.join(', ')); helpTextExit(); return;}
+
 var urlRedis;
 if(  (urlRedis=process.env.REDISTOGO_URL)  || (urlRedis=process.env.REDISCLOUD_URL)  ) {
   var objRedisUrl=url.parse(urlRedis),    password=objRedisUrl.auth.split(":")[1];
