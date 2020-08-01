@@ -33,7 +33,7 @@ var addStuffGeneral=function(){
     var tmpSetLastActivity=makeTimeF('lastActivity',-1);
     var tmpIP=function(iMTab,c){  return enumIP[Number( MTab[iMTab].IP )]; }
 
-    var calcImageUrl=function(iMTab){var rT=MTab[iMTab],tmp=''; if(rT.IP=='1') tmp='http://graph.facebook.com/'+rT.idIP+'/picture';else tmp=uDummy; return tmp;}
+    var calcImageUrl=function(iMTab){var rT=MTab[iMTab],tmp=''; if(rT.IP=='1') tmp='https://graph.facebook.com/'+rT.idIP+'/picture';else tmp=uDummy; return tmp;}
     var tmpSetImage=function(iMTab,c){ c.children[0].prop({src:calcImageUrl(iMTab)});  }  
 
     var tmpCrImage=function(c){ c.append(createElement('img'));  }
@@ -196,30 +196,56 @@ history.fastBack=function(viewGoal, boRefreshHash){
 // spanMessageTextCreate
 //
 
-var spanMessageTextCreate=function(){
-  var el=createElement('span');
+//var spanMessageTextCreate=function(){
+  //var el=createElement('span');
+  //var spanInner=createElement('span');
+  //el.appendChild(spanInner, imgBusy)
+  //el.resetMess=function(time){
+    //clearTimeout(messTimer);
+    //if(typeof time =='number') { messTimer=setTimeout('resetMess()',time*1000); return; }
+    //spanInner.myText(' ');
+    //imgBusy.hide();
+  //}
+  //el.setMess=function(str,time,boRot){
+    //spanInner.myText(str);
+    //clearTimeout(messTimer);
+    //if(typeof time =='number')     messTimer=setTimeout('resetMess()',time*1000);
+    //imgBusy.toggle(Boolean(boRot));
+  //};
+  //el.setHtml=function(str,time,boRot){
+    //spanInner.myHtml(str);
+    //clearTimeout(messTimer);
+    //if(typeof time =='number')     messTimer=setTimeout('resetMess()',time*1000);
+    //imgBusy.toggle(Boolean(boRot));
+  //};
+  //var messTimer;
+  //el.addClass('message');//.css({'z-index':8100,position:'fixed'});
+  //return el;
+//}
+var divMessageTextCreate=function(){
   var spanInner=createElement('span');
-  el.appendChild(spanInner, imgBusy)
+  var imgBusyLoc=imgBusy.cloneNode().css({zoom:'65%','margin-left':'0.4em'}).hide();
+  var el=createElement('div').myAppend(spanInner, imgBusyLoc);
   el.resetMess=function(time){
     clearTimeout(messTimer);
-    if(typeof time =='number') { messTimer=setTimeout('resetMess()',time*1000); return; }
+    if(time) { messTimer=setTimeout(resetMess, time*1000); return; }
     spanInner.myText(' ');
-    imgBusy.hide();
+    imgBusyLoc.hide();
   }
-  el.setMess=function(str,time,boRot){
+  el.setMess=function(str='',time,boRot){
     spanInner.myText(str);
     clearTimeout(messTimer);
-    if(typeof time =='number')     messTimer=setTimeout('resetMess()',time*1000);
-    imgBusy.toggle(Boolean(boRot));
+    if(time)     messTimer=setTimeout(resetMess, time*1000);
+    imgBusyLoc.toggle(Boolean(boRot));
   };
-  el.setHtml=function(str,time,boRot){
+  el.setHtml=function(str='',time,boRot){
     spanInner.myHtml(str);
     clearTimeout(messTimer);
-    if(typeof time =='number')     messTimer=setTimeout('resetMess()',time*1000);
-    imgBusy.toggle(Boolean(boRot));
+    if(time)     messTimer=setTimeout(resetMess, time*1000);
+    imgBusyLoc.toggle(Boolean(boRot));
   };
   var messTimer;
-  el.addClass('message');//.css({'z-index':8100,position:'fixed'});
+  el.addClass('message');
   return el;
 }
 
@@ -328,7 +354,7 @@ var loginPopExtend=function(el){
   buttGo.css({position:'relative',bottom:'0.2em','font-size':'0.8em','margin-left':'0.4em'});
   [...formOpenID.querySelectorAll('input[type=text],[type=email],[type=number],[type=password]')].forEach( ele=>ele.css({display:'block'}).on('keypress',(e)=>{if(e.which==13) loginWEmail(e);} ) );
   
-  var createAccount=createElement('a').prop({href:'http://openid.net/get-an-openid/'}).myHtml(langHtml.loginPop.openIDProviders).css({'font-size':'75%', display:'block'});
+  var createAccount=createElement('a').prop({href:'https://openid.net/get-an-openid/'}).myHtml(langHtml.loginPop.openIDProviders).css({'font-size':'75%', display:'block'});
   var img=imgHelp.cloneNode(), createAccountHelp=createElement('div').myAppend(langHtml.loginPop.createAccountHelp);  popupHover(img,createAccountHelp); 
   formOpenID.myAppend(createAccount);
 
@@ -849,7 +875,7 @@ var moreDivExtend=function(el){
   el.toString=function(){return 'moreDiv';}
 
   var buttonBack=createElement('button').on('click', historyBack).myAppend(langHtml.Back).css({'margin-left':'0.6em'});
-  var aWiki=createElement('a').prop({href:uInfo,target:"_blank"}).myAppend(langHtml.Wiki);
+  var aWiki=createElement('a').prop({href:uInfo,target:"_blank", rel:"noopener"}).myAppend(langHtml.Wiki);
  
   
   var buttLogin=createElement('button').myAppend(langHtml.Login).on('click', function(){loginReturn2=loginReturnVoter; loginPop.setHead(langHtml.Login).openFunc('voter'); });
@@ -857,8 +883,8 @@ var moreDivExtend=function(el){
 
   var divWiki=createElement('div').myAppend(aWiki,' (',langHtml.moreInfo,')');
 
-  var aSoftWiki=createElement('a').prop({href:uInfo,target:"_blank"}).myAppend('Vote software (info)');
-  var aSoft=createElement('a').prop({href:uSrc,target:"_blank"}).myAppend(langHtml.sourceCode);
+  var aSoftWiki=createElement('a').prop({href:uInfo,target:"_blank", rel:"noopener"}).myAppend('Vote software (info)');
+  var aSoft=createElement('a').prop({href:uSrc,target:"_blank", rel:"noopener"}).myAppend(langHtml.sourceCode);
   var divSoft=createElement('div').myAppend( aSoftWiki, ' (',aSoft,')');  //langHtml.textSoft, ' ',
 
   el.adminButton=createElement('button').myText('Admin').css({display:'block'}).on('click',function(){ 
@@ -1082,7 +1108,10 @@ var uDelete1=uImageFolder+'delete1.png';
 var uList16=uImageFolder+'list16.png';
 var uFilter=uImageFolder+'filter.png';
 var uDummy=uImageFolder+'dummy.gif';
- 
+
+
+var maxWidth='800px';
+
 var colMenuOn='#aaa', colMenuOff='#ddd'; 
 var colMenuBOn='#616161', colMenuBOff='#aaa';    
 
@@ -1093,7 +1122,12 @@ var colMenuBOn='#616161', colMenuBOff='#aaa';
 //var messageText=messExtend(createElement('span'));  window.setMess=messageText.setMess;  window.resetMess=messageText.resetMess;  elBody.append(messageText);
 
 var imgBusy=createElement('img').prop({src:uBusy});
-var spanMessageText=spanMessageTextCreate();  window.setMess=spanMessageText.setMess;  window.resetMess=spanMessageText.resetMess;  window.appendMess=spanMessageText.appendMess;  elBody.append(spanMessageText)
+//var spanMessageText=spanMessageTextCreate();  window.setMess=spanMessageText.setMess;  window.resetMess=spanMessageText.resetMess;  window.appendMess=spanMessageText.appendMess;  elBody.append(spanMessageText)
+
+var divMessageText=divMessageTextCreate();  copySome(window, divMessageText, ['setMess', 'resetMess', 'appendMess']);
+var divMessageTextWInner=createElement('div').myAppend(divMessageText).css({margin:'0em auto', width:'100%', 'max-width':maxWidth, 'text-align':'center', position:'relative'});
+var divMessageTextW=createElement('div').myAppend(divMessageTextWInner).css({width:'100%', position:'fixed', bottom:'0px', left:'0px', 'z-index':'10'});
+elBody.append(divMessageTextW);
 
 var busyLarge=createElement('img').prop({src:uBusyLarge}).css({position:'fixed',top:'50%',left:'50%','margin-top':'-42px','margin-left':'-42px','z-index':'1000',border:'black solid 1px'}).hide();
 elBody.append(busyLarge);
@@ -1260,7 +1294,7 @@ var MainDiv=[loginInfo, H1, summaryDiv, voterListHead, voterListDiv, filterDiv, 
 
 var tmpCss={'border-top':'1px solid white', 'margin-left':'auto','margin-right':'auto','text-align':'left',background:'#fff'};   MainDiv.forEach(ele=>ele.css(tmpCss));
 var MainDivsNonFixWidth=[];  if(!boTouch) {MainDivsNonFixWidth.push(voterListDiv)}
-var MainDivsFixWidth=AMinusB(MainDiv,MainDivsNonFixWidth);  MainDivsFixWidth.forEach(ele=>ele.css({'max-width':'800px'}));
+var MainDivsFixWidth=AMinusB(MainDiv,MainDivsNonFixWidth);  MainDivsFixWidth.forEach(ele=>ele.css({'max-width':maxWidth}));
 
 var tmpCss={'min-width':'800px',display:'inline-block','text-align':'left'};  MainDivsNonFixWidth.forEach(ele=>ele.css(tmpCss));
 voterListDiv.querySelector('table').css({'margin-top':'1em'});
