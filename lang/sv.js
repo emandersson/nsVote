@@ -49,7 +49,7 @@ tsPopup:'Exakt tidpunkt',
 
 Login:'Logga in',
   //login
-loginInfo:{
+divLoginInfo:{
 'admin':'admin',
 'voter':'röstare',
 'logoutButt':'Logga ut'},

@@ -34,6 +34,7 @@ leafLoginBack="loginBack.html";
 leafUploadFront="upload.html"; 
 leafSiteSpecific='siteSpecific.js';
 leafPayNotify="payNotify.js";
+leafManifest='manifest.json';
 
 
 
@@ -256,8 +257,8 @@ featCalcValExtend=function(Prop){
 
 siteCalcValExtend=function(site,siteName){ // Adding stuff that can be calculated from the other properties
   var Prop=site.Prop;
-  site.KeyCol=Object.keys(Prop);   site.nCol=site.KeyCol.length;   site.colsFlip=array_flip(site.KeyCol);
-  site.KeySel=calcKeySel(Prop,site.KeyCol); site.selFlip=array_flip(site.KeySel);
+  site.KeyProp=Object.keys(Prop);   site.nProp=site.KeyProp.length;   site.KeyPropFlip=array_flip(site.KeyProp);
+  site.KeySel=filterPropKeyByB(Prop,bFlip.DBSel);
 
 
   featCalcValExtend(Prop); 
@@ -271,7 +272,19 @@ siteCalcValExtend=function(site,siteName){ // Adding stuff that can be calculate
   //site.db=siteName in DB?siteName:'default';
   //var db=siteName in DB?DB[siteName]:DB.default;  site.pool=db.pool;
   
+  var KeySel=site.KeySel;
+  var arrCol=[];
+  for(var j=0;j<KeySel.length;j++) {
+    var key=KeySel[j], b=Prop[key].b, pre=Prop[key].pre||preDefault;
+    var tmp; if('selF' in Prop[key]) { tmp=Prop[key].selF(pre+key);  }   else tmp=pre+"`"+key+"`";
+    arrCol.push(tmp+" AS "+"`"+key+"`");
+  }
+  site.strSel=arrCol.join(', ');
+  
+
 }
+
+
 
 StrPlugInAll=Object.keys(Plugin);
 
@@ -283,10 +296,12 @@ objStrPlugIn={
 }
 
 
+IntSizeIcon=[16, 114, 192, 200, 512, 1024];
+IntSizeIconFlip=array_flip(IntSizeIcon);
 SiteExtend=function(){
   for(var i=0;i<SiteName.length;i++){
     var siteName=SiteName[i], StrPlugIn=[];
-    var tmp={siteName:siteName, Prop:{}};
+    var tmp={siteName, Prop:{}};
     var site=extend(Site[siteName],tmp);
     var StrPlugIn=objStrPlugIn[site.typeApp];
 
@@ -310,17 +325,27 @@ SiteExtend=function(){
       };
     }
 
+    site.SrcIcon=Array(IntSizeIcon.length);
+    site.icons=Array(IntSizeIcon.length);
+    var strType='png', wsIconProt=site.wsIconProt || wsIconDefaultProt;
+  
+    IntSizeIcon.forEach((size, ind)=>{
+      site.SrcIcon[ind]=wsIconProt.replace("<size>", size);
+      site.icons[ind]={ src:site.SrcIcon[ind], type: mime.getType(strType), sizes: size+"x"+size, purpose: "any maskable" };
+    });
+
+
   }
 
   //Site.getSite=function(wwwReq){
     //for(var i=0;i<SiteName.length;i++){
-      //var siteName=SiteName[i];   var tmp; if(tmp=Site[siteName].testWWW(wwwReq)) {return {siteName:siteName, wwwSite:tmp};  }
+      //var siteName=SiteName[i];   var tmp; if(tmp=Site[siteName].testWWW(wwwReq)) {return {siteName, wwwSite:tmp};  }
     //}
     //return false;
   //}
   Site.getSite=function(wwwReq){
     for(var i=0;i<SiteName.length;i++){
-      var siteName=SiteName[i];   var tmp; if(tmp=Site[siteName].testWWW(wwwReq)) {return {siteName:siteName, wwwSite:tmp};  }
+      var siteName=SiteName[i];   var tmp; if(tmp=Site[siteName].testWWW(wwwReq)) {return {siteName, wwwSite:tmp};  }
     }
     return {siteName:null};
   }
@@ -344,7 +369,7 @@ DBExtend=function(){
 
     var StrMatch=RegExp('^(.*):(.*)$').exec(uriObj.auth);
     var nameDB=uriObj.pathname.substr(1);
-    DB[name]={nameDB:nameDB};
+    DB[name]={nameDB};
     var pool  = mysql.createPool({
       connectionLimit : nDBConnectionLimit,
       host            : uriObj.host,

@@ -1,172 +1,30 @@
 
 
-/* images */
-div.floatright, table.floatright {
-	clear: right;
-	float: right;
-	position: relative;
-	margin: 0 0 .5em .5em;
-	border: 0;
-/*
-	border: .5em solid white;
-	border-width: .5em 0 .8em 1.4em;
-*/
-}
-
-
-div.floatright p { font-style: italic; }
-div.floatleft, table.floatleft {
-	float: left;
-	clear: left;
-	position: relative;
-	margin: 0 .5em .5em 0;
-	border: 0;
-/*
-	margin: .3em .5em .5em 0;
-	border: .5em solid white;
-	border-width: .5em 1.4em .8em 0;
-*/
-}
-div.floatleft p { font-style: italic; }
-/* thumbnails */
-div.thumb {
-	margin-bottom: .5em;
-	border-style: solid;
-	border-color: white;
-	width: auto;
-}
-div.noFrame {
-	margin-bottom: .5em;
-	border-style: hidden;
-	width: auto;
-}
-div.noFrameinner {
-	border: 1px hidden #ccc;
-	padding: 3px !important;
-	font-size: 94%;
-	text-align: center;
-	overflow: hidden;
-}
-div.thumbinner {
-	border: 1px solid #ccc;
-	padding: 3px !important;
-	background-color: #f9f9f9;
-	font-size: 94%;
-	text-align: center;
-	overflow: hidden;
-}
-html .thumbimage {
-	border: 1px solid #ccc;
-}
-html .thumbcaption {
-	border: none;
-	text-align: left;
-	line-height: 1.4em;
-	padding: 3px !important;
-	font-size: 94%;
-}
-html .noFrameCaption {
-	border: none;
-	text-align: center;
-	line-height: 1.4em;
-	padding: 3px !important;
-	font-size: 94%;
-}
-div.magnify {
-	float: right;
-	border: none !important;
-	background: none !important;
-}
-div.magnify a, div.magnify img {
-	display: block;
-	border: none !important;
-	background: none !important;
-}
-div.tright {
-	clear: right;
-	float: right;
-	border-width: .5em 0 .8em 1.4em;
-}
-div.tleft {
-	float: left;
-	clear: left;
-	margin-right: .5em;
-	border-width: .5em 1.4em .8em 0;
-}
-
-img.thumbborder {
-	border: 1px solid #dddddd;
-}
-
-/* emulate center */
-.center {
-	width: 100%;
-	text-align: center;
-}
-*.center * {
-	margin-left: auto;
-	margin-right: auto;
-}
-
 p {
     margin: 0.3em 0em 0.3em 0em;
     line-height: 1.2em;
 }
 
-dl{
-    margin-top: 0.2em;
-    margin-bottom: 0.5em;
-}
-dd {
-    line-height: 1.2em;
-    margin-left: 2em;
-    margin-bottom: 0.1em;
-}
-
-
-*.hidden {	visibility: hidden}
-
-code {	font-size:17px;
-	font-family:courier;
-}
-
-pre {
-	font-size: 13px;
-	border: solid 1px #3c78b5;
-	padding: 1em;
-	border-style:dashed;
-}
-
-
-body {	font-family:arial, verdana, helvetica;font-size:100%}
-
 body { -webkit-text-size-adjust: 100%; }
 
 
 table {border-width:0;border-style:solid;border-collapse:collapse;font-size:inherit}
-/*td,th {border-width:1px }*/
 tbody,thead,tr,td,th {border: inherit} 
-/*td.solid,th.solid {border-width:1px;border-style:solid }*/
 
 
 input, textarea, keygen, select, button, isindex  {	font-family:arial, verdana, helvetica;font-size:small}
 
 
-
-
 div.formLogin{
   border:black 2px solid;
   position:fixed;
-  _position:absolute;
   top:50%;
-  _top:expression(eval(document.body.scrollTop+document.body.clientHeight/2));
   left:40%;
   margin:0;
   padding:10px;
   background:#ddd;
- }
+}
  
-
 
 .message{
   border:black 1px solid;
@@ -179,21 +37,6 @@ div.formLogin{
   font-size: 0.8em;
   z-index: 10000;
 }
-
-dt	{font-weight:bold;}
-
-del	{background-color:#ffaaaa;}
-ins	{background-color:#aaffaa;text-decoration: none;}
-
-/* Sortable tables */
-table.sortable thead {
-    background-color:#eee;
-    color:#666666;
-    font-weight: bold;
-    cursor: default;
-}
-
-
 
 
 .popupHover {
@@ -209,25 +52,6 @@ table.sortable thead {
   font-size: 0.95em;
 }
 
-/*
-.blanketPop {
-   background-color:#111;
-   opacity: 0.65;
-   position:absolute;
-   z-index: 9001; 
-   top:0px;
-   left:0px;
-   width:100%;
-}
-
-
-.popUpDiv {
-  position:absolute;
-	background-color:#eeeeee;
-	z-index: 9002; 
-  border:1px solid
-}
-*/
 
 .blanket{
   position: relative;
@@ -260,8 +84,6 @@ table.sortable thead {
 }
 
 
-
-
 span.headingTopW { color:#fff; display:inline-block; }
 
 
@@ -276,3 +98,22 @@ span.headingTopW { color:#fff; display:inline-block; }
 
 *.smallButt{font-size:12px;padding:1px 2px 1px 2px;margin:1px 0px 1px 0px}
 
+
+.btn-round {
+  text-align: center;
+  width: 1.6em;
+  height: 1.6em;
+  border-radius: 100%;
+  border: 1px solid;
+  display: inline-block;
+  text-decoration: none;
+  line-height: 1.7em;
+  cursor: default
+}
+.helpButtonGradient {
+  background-image: radial-gradient(#daeaff, #8cbdfd, #0064ea);;
+  color: #5780a8;
+  border: 0;
+  font-weight: bold;
+  font-size: 90%;
+}

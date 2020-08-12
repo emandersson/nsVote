@@ -1,3 +1,4 @@
+
 "use strict"
 app.parseCookies=function(req) {
   var list={}, rc=req.headers.cookie;
@@ -25,7 +26,7 @@ MyMySql.prototype.startTransaction=function*(flow){
   this.transactionState='started';
   return [null];
 }
-MyMySql.prototype.query=function*(flow, sql, Val){
+MyMySql.prototype.query=function*(flow, sql, Val=[]){
   if(!this.connection) {var [err]=yield* this.getConnection(flow); if(err) return [err];}
   var err, results, fields;    this.connection.query(sql, Val, function (errT, resultsT, fieldsT) { err=errT; results=resultsT; fields=fieldsT; flow.next(); }); yield;   return [err, results, fields];
 }
@@ -67,7 +68,10 @@ tmp.out301Loc=function(url){  this.writeHead(301, {Location: '/'+url});  this.en
 tmp.out403=function(){ this.outCode(403, "403 Forbidden\n");  }
 tmp.out304=function(){  this.outCode(304);   }
 tmp.out404=function(str){ str=str||"404 Not Found\n"; this.outCode(404, str);    }
-tmp.out500=function(err){ var errN=(err instanceof Error)?err:(new MyError(err)); console.log(errN.stack); this.writeHead(500, {"Content-Type": MimeType.txt});  this.end(err+ "\n");   }
+tmp.out500=function(err){
+  var errN=(err instanceof Error)?err:(new MyError(err)); console.log(errN.stack);
+  this.writeHead(500, {"Content-Type": MimeType.txt});  this.end(err+ "\n");
+}
 tmp.out501=function(){ this.outCode(501, "Not implemented\n");   }
 
 
@@ -97,7 +101,7 @@ app.getBrowserLang=function(req){
   var strLang='en';
   for(var i=0; i<Lang.length; i++){
     var lang=Lang[i][0];
-	  if(lang.substr(0,2)=='sv'){  strLang='sv';  } 
+    if(lang.substr(0,2)=='sv'){  strLang='sv';  } 
   }
   return strLang;
 }
@@ -124,38 +128,7 @@ app.MimeType={
 };
 
 
-
-app.genRandomString=function(len) {
-  var characters = 'abcdefghijklmnopqrstuvwxyz';
-  //var characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  var str ='';    
-  for(var p=0; p<len; p++) {
-    str+=characters[randomInt(0, characters.length-1)];
-  }
-  return string;
-}
 app.md5=function(str){return crypto.createHash('md5').update(str).digest('hex');}
-
-
-//wrapRedisSendCommand=function(strCommand,arr){
-  //var future=new Future;
-  ////redisClient.send(strCommand,arr).then(function(value){ future.return(value);});
-  //redisClient.send_command(strCommand,arr, function(err, value){ future.return(value);});
-  //return future.wait();
-//}
-//getSessionMain=function(){ 
-  //var redisVar=this.req.sessionID+'_Main', strTmp=wrapRedisSendCommand('get',[redisVar]);   this.sessionMain=JSON.parse(strTmp);
-//}
-//setSessionMain=function(){
-  //var strA=JSON.stringify(this.sessionMain);
-  //var redisVar=this.req.sessionID+'_Main', strTmp=wrapRedisSendCommand('set',[redisVar,strA]);   var tmp=wrapRedisSendCommand('expire',[redisVar,maxUnactivity]);
-//}
-//resetSessionMain=function(){
-  //this.sessionMain={userInfoFrDB:extend({},specialistDefault),   userInfoFrIP:{}};
-  //setSessionMain.call(this);
-  ////var strA=JSON.stringify(this.sessionMain);
-  ////var redisVar=this.req.sessionID+'_Main', tmp=wrapRedisSendCommand('set',[redisVar,strA]);     var tmp=wrapRedisSendCommand('expire',[redisVar,maxUnactivity]);
-//}
 
 
   // Redis
@@ -180,9 +153,8 @@ app.delRedis=function*(flow, arr){
   var [err,strTmp]=yield* cmdRedis(flow, 'DEL', arr);
 }
 
-
     // closebymarket
-  //var StrSuffix=['_Cache', '_LoginIdP', '_LoginIdUser', '_UserInfoFrDB', '_Counter'];  var StrCaller=['index'], for(var i=0;i<StrCaller.length;i++){  StrSuffix.push('_CSRFCode'+ucfirst(StrCaller[i])); }
+  //var StrSuffix=['_Main', '_LoginIdP', '_LoginIdUser', '_UserInfoFrDB', '_Counter'];  var StrCaller=['index'], for(var i=0;i<StrCaller.length;i++){  StrSuffix.push('_CSRFCode'+ucfirst(StrCaller[i])); }
   //var err=yield* changeSessionId.call(this, sessionIDNew, StrSuffix);
 app.changeSessionId=function*(sessionIDNew, StrSuffix){
   for(var i=0;i<StrSuffix.length;i++){
@@ -193,10 +165,6 @@ app.changeSessionId=function*(sessionIDNew, StrSuffix){
   this.req.sessionID=sessionIDNew;
   return null;
 }
-
-
-
-
 
 
 app.getIP=function(req){
@@ -225,13 +193,13 @@ app.getIP=function(req){
   return false
 }
 
-app.luaCountFunc="\n\
-local boSessionExist=redis.call('EXISTS',KEYS[1]);\n\
-local c;\n\
-if(boSessionExist>0) then c=redis.call('INCR',KEYS[2]); redis.call('EXPIRE',KEYS[2], ARGV[1]);\n\
-else c=redis.call('INCR',KEYS[3]); redis.call('EXPIRE', KEYS[3], ARGV[1]);\n\
-end;\n\
-return c";
+app.luaCountFunc=`
+local boSessionExist=redis.call('EXISTS',KEYS[1]);
+local c;
+if(boSessionExist>0) then c=redis.call('INCR',KEYS[2]); redis.call('EXPIRE',KEYS[2], ARGV[1]);
+else c=redis.call('INCR',KEYS[3]); redis.call('EXPIRE', KEYS[3], ARGV[1]);
+end;
+return c`;
 
 
 app.CacheUriT=function(){
@@ -246,7 +214,7 @@ app.CacheUriT=function(){
       var gzip = zlib.createGzip();
       var err; zlib.gzip(bufI, function(errT, bufT) { err=errT; buf=bufT; flow.next(); });  yield; if(err) return [err];
     }
-    this[key]={buf:buf,type:type,eTag:eTag,boZip:boZip,boUglify:boUglify};
+    this[key]={buf,type,eTag,boZip,boUglify};
     return [null];
   }
 }
@@ -260,6 +228,7 @@ app.readFileToCache=function*(flow, strFileName) {
   var [err]=yield* CacheUri.set(flow, '/'+strFileName, buf, type, boZip, boUglify);
   return [err];
 }
+
 app.makeWatchCB=function(strFolder, StrFile) {
   return function(ev,filename){
     if(StrFile.indexOf(filename)!=-1){
@@ -271,7 +240,6 @@ app.makeWatchCB=function(strFolder, StrFile) {
     }
   }
 }
-
 
 app.isRedirAppropriate=function(req){
   if(typeof RegRedir=='undefined') return false;
@@ -292,7 +260,6 @@ app.myJSEscape=function(str){return str.replace(/&/g,"&amp;").replace(/</g,"&lt;
   // myAttrEscape
   // Only one of " or ' must be escaped depending on how it is wrapped when on the client.
 app.myAttrEscape=function(str){return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/\//g,"&#47;");} // This will keep any single quataions.
-
 
 
 app.setAccessControlAllowOrigin=function(req, res, RegAllowed){

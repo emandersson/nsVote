@@ -43,10 +43,10 @@ app.runIdIP=function*(flow, IP, idIP, StrRole=['voter','admin']){ //check  idIP 
   var userInfoFrDBUpd={};
 
   if(StrRole.indexOf('voter')!=-1){
-        // Create an array from KeyCol/colsDBMask
+        // Create an array from KeyProp/colsDBMask
     var  arrCol=[]; //, arrName=[];
-    for(var i=0;i<site.nCol;i++) {
-      var name=site.KeyCol[i], b=Prop[name].b;
+    for(var i=0;i<site.nProp;i++) {
+      var name=site.KeyProp[i], b=Prop[name].b;
       if(Number(b[bFlip.DBSelOne]))  {   
         //arrName.push(name);
         var tmp;
@@ -114,32 +114,28 @@ app.checkIfAnySpecialist=function(){
 
 
 
-//createSiteSpecificClientJSAll=function() {
-  //for(var i=0;i<SiteName.length;i++){
-    //var siteName=SiteName[i];
-    //var buf=createSiteSpecificClientJS(siteName);
-    //var keyCache=siteName+'/'+leafSiteSpecific;
-    //var [err]=CacheUri.set(keyCache, buf, 'js', true, true);
-  //}
-//}
-
 app.createSiteSpecificClientJSAll=function*(flow) {
   for(var i=0;i<SiteName.length;i++){
     var siteName=SiteName[i];
     var buf=createSiteSpecificClientJS(siteName);
     var keyCache=siteName+'/'+leafSiteSpecific;
-    var [err]=yield *CacheUri.set(flow, keyCache, buf, 'js', true, true);
+    var [err]=yield *CacheUri.set(flow, keyCache, buf, 'js', true, true); if(err) return [err];
+
+    var buf=createManifest(siteName);
+    var keyCache=siteName+'/'+leafManifest;
+    var [err]=yield *CacheUri.set(flow, keyCache, buf, 'json', true, true); if(err) return [err];
   }
+  return [null];
 }
 
 var createSiteSpecificClientJS=function(siteName) {
   var site=Site[siteName], wwwSite=site.wwwSite;
 
-  //var StrSkip=['KeyCol', 'nCol', 'colsFlip', 'StrOrderDB', 'TableName', 'ViewName', 'arrAllowed',  'boGotNewUsers', 'timerNUserLast', 'nVis', 'nUser', 'db', 'googleAnalyticsTrackingID','serv'];
+  //var StrSkip=['KeyProp', 'nProp', 'KeyPropFlip', 'StrOrderDB', 'TableName', 'ViewName', 'arrAllowed',  'boGotNewUsers', 'timerNUserLast', 'nVis', 'nUser', 'db', 'googleAnalyticsTrackingID','serv'];
   //var siteSkip={}; for(var i=0;i<StrSkip.length;i++){ var name=StrSkip[i]; siteSkip[name]=site[name]; delete site[name];}
   
   
-  var StrSkip=['KeyCol', 'nCol', 'colsFlip', 'StrOrderDB', 'TableName', 'ViewName', 'arrAllowed',  'boGotNewUsers', 'timerNUserLast', 'nVis', 'nUser', 'db', 'googleAnalyticsTrackingID','serv'];
+  var StrSkip=['KeyProp', 'nProp', 'KeyPropFlip', 'StrOrderDB', 'TableName', 'ViewName', 'arrAllowed',  'boGotNewUsers', 'timerNUserLast', 'nVis', 'nUser', 'db', 'googleAnalyticsTrackingID','serv'];
   var Key=Object.keys(site), siteSimplified={};
   for(var i=0;i<Key.length;i++){ var name=Key[i]; if(StrSkip.indexOf(name)==-1) siteSimplified[name]=site[name]; }
 
@@ -163,7 +159,28 @@ var createSiteSpecificClientJS=function(siteName) {
 }
 
 
+app.createManifest=function(siteName){
+  var site=Site[siteName], {wwwSite, icons}=site;
+  var uSite="https://"+site.wwwSite;
+  let objOut={theme_color:"#ff0", background_color:"#fff", display:"minimal-ui", prefer_related_applications:false, short_name:siteName, name:siteName, start_url: uSite, icons }
 
+  //let str=serialize(objOut);
+  let str=JSON.stringify(objOut);
+  return str;
+}
+
+app.createManifestNStoreToCache=function*(flow, siteName){
+  var strT=createManifest(siteName);
+  var buf=Buffer.from(strT, 'utf8');
+  var [err]=yield* CacheUri.set(flow, siteName+'/'+leafManifest, buf, 'json', true, false);   if(err) return [err];
+  return [null];
+}
+app.createManifestNStoreToCacheMult=function*(flow, SiteName){
+  for(var i=0;i<SiteName.length;i++){
+    var [err]=yield* createManifestNStoreToCache(flow, SiteName[i]);   if(err) return [err];
+  }
+  return [null];
+}
 
 
 

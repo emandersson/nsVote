@@ -11,7 +11,31 @@
 app.ReqBE=function(objReqRes){
   Object.assign(this, objReqRes);
   this.site=this.req.site
-  this.Str=[];  this.Out={GRet:{userInfoFrDBUpd:{}}, dataArr:[]};  this.GRet=this.Out.GRet; 
+  //this.Str=[];  this.Out={GRet:{userInfoFrDBUpd:{}}, dataArr:[]};  this.GRet=this.Out.GRet; 
+  this.Str=[];  this.dataArr=[];  this.GRet={userInfoFrDBUpd:{}}; 
+}
+
+ReqBE.prototype.mes=function(str){ this.Str.push(str); }
+ReqBE.prototype.mesO=function(str){
+  if(str) this.Str.push(str);
+  this.GRet.strMessageText=this.Str.join(', ');
+  this.GRet.userInfoFrIP=this.sessionCache.userInfoFrIP;
+  var objOut=copySome({}, this, ["dataArr", "GRet"]);
+  this.res.end(serialize(objOut));
+}
+ReqBE.prototype.mesEO=function(errIn, statusCode=500){
+  var GRet=this.GRet;
+  var boString=typeof errIn=='string';
+  var err=errIn; 
+  if(boString) { this.Str.push('E: '+errIn); err=new MyError(errIn); } 
+  else{  var tmp=err.syscal||''; this.Str.push('E: '+tmp+' '+err.code);  }
+  console.log(err.stack);
+  GRet.strMessageText=this.Str.join(', ');
+  GRet.userInfoFrIP=this.sessionCache.userInfoFrIP; 
+
+  //this.res.writeHead(500, {"Content-Type": MimeType.txt}); 
+  var objOut=copySome({}, this, ["dataArr", "GRet"]);
+  this.res.end(serialize(objOut));
 }
 
 ReqBE.prototype.go=function*(){
@@ -118,30 +142,9 @@ ReqBE.prototype.go=function*(){
     else if(err){
       if(typeof err=='object' && err.name=='ErrorClient') this.mesO(err); else this.mesEO(err);     return;
     }
-    else this.Out.dataArr.push(result);
+    else this.dataArr.push(result);
   }
   this.mesO();
-}
-
-
-ReqBE.prototype.mes=function(str){ this.Str.push(str); }
-ReqBE.prototype.mesO=function(str){
-  if(str) this.Str.push(str);
-  this.GRet.strMessageText=this.Str.join(', ');
-  this.GRet.userInfoFrIP=this.sessionCache.userInfoFrIP;  this.res.end(serialize(this.Out));
-}
-ReqBE.prototype.mesEO=function(errIn){
-  var GRet=this.GRet;
-  var boString=typeof errIn=='string';
-  var err=errIn; 
-  if(boString) { this.Str.push('E: '+errIn); err=new MyError(errIn); } 
-  else{  var tmp=err.syscal||''; this.Str.push('E: '+tmp+' '+err.code);  }
-  console.log(err.stack);
-  GRet.strMessageText=this.Str.join(', ');
-  GRet.userInfoFrIP=this.sessionCache.userInfoFrIP; 
-
-  //this.res.writeHead(500, {"Content-Type": MimeType.txt}); 
-  this.res.end(serialize(this.Out));
 }
 
 
@@ -184,9 +187,9 @@ ReqBE.prototype.setUpCond=function*(inObj){
   if(typeof inObj.Filt!='object') return [new ErrorClient('typeof inObj.Filt!="object"')]; 
   this.Filt=inObj.Filt;
   
-  var arg={KeySel:site.KeySel, Prop:Prop, Filt:inObj.Filt};  //, StrOrderFilt:StrOrderFilt
+  var arg={Prop, Filt:inObj.Filt};
   var tmp=setUpCond(arg);
-  copySome(this,tmp,['strCol', 'Where']);
+  copySome(this,tmp,['Where']);
   return [null, [Ou]];
 }
 
@@ -235,9 +238,9 @@ ReqBE.prototype.setUp=function*(inObj){  // Set up some properties etc.  (curTim
 ReqBE.prototype.getList=function*(inObj){
   var req=this.req, flow=req.flow, siteName=req.siteName, site=req.site;
   var TableName=site.TableName;
-  var strCol=this.strCol;
+  //var strSel=this.strSel;
   var Ou={};
-  Ou.tab=[];this.NVoter=[0,0];
+  this.NVoter=[0,0];
 
   var {userTab}=site.TableName;
   if(boUseSnapShot){  userTab=TableName.userSnapShotTab; }
@@ -245,10 +248,11 @@ ReqBE.prototype.getList=function*(inObj){
   var offset=Number(inObj.offset), rowCount=Number(inObj.rowCount);
   var Val=[];
   var strCond=array_filter(this.Where).join(' AND '); if(strCond.length) strCond=' WHERE '+strCond;
-  var sql="SELECT SQL_CALC_FOUND_ROWS "+strCol+" FROM "+userTab+" u "+strCond+" GROUP BY u.idUser ORDER BY lastActivity DESC LIMIT "+offset+","+rowCount+";", Val=[];
+  var sql="SELECT SQL_CALC_FOUND_ROWS "+site.strSel+" FROM "+userTab+" u "+strCond+" GROUP BY u.idUser ORDER BY lastActivity DESC LIMIT "+offset+","+rowCount+";", Val=[];
   var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
 
-
+  //Ou.tab=arrObj2TabNStrCol(results);
+  Ou.tab=[];
   for(var i=0;i<results.length;i++) {
     var row=results[i], len=site.KeySel.length;
     var rowN=Array(len); //for(var j=0;j<len;j++) { rowN[j]=row[j];}
@@ -280,7 +284,7 @@ ReqBE.prototype.getHist=function*(inObj){
   //var strTableRef=userTab+" u JOIN "+choiseTab+" c ON u.idUser=c.idUser "; 
   var strTableRef=userTab+" u "; 
   
-  var arg={strTableRef:strTableRef, WhereExtra:[]};  
+  var arg={strTableRef, WhereExtra:[]};  
   copySome(arg, site, ['Prop']);
   copySome(arg, this, ['myMySql', 'Filt', 'Where']);
   arg.strDBPrefix=req.siteName;
@@ -450,42 +454,6 @@ ReqBE.prototype.setSetting=function*(inObj){
   return [null, [Ou]];
 }
 
-ReqBE.prototype.getDBSetting=function*(inObj){ 
-  var req=this.req, flow=req.flow, site=req.site;
-  var settingTab=site.TableName.settingTab;
-  var Ou={};
-  if(!isAWithinB(inObj,['boShowTeam'])) { return [new ErrorClient('Illegal invariable')];}
-  var strV=inObj.join("', '");
-  var sql="SELECT * FROM "+settingTab+" WHERE name IN('"+strV+"')";
-  var Val=[];
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
-  for(var i=0; i<results.length;i++){ var tmp=results[i]; Ou[tmp.name]=tmp.value;  }
-  return [null,[Ou]];
-}
-
-ReqBE.prototype.setDBSetting=function*(inObj){ 
-  var req=this.req, flow=req.flow, site=req.site;
-  var settingTab=site.TableName.settingTab;
-  var Ou={};
-  var Str=[];
-  if(this.sessionCache.userInfoFrDB.admin) Str=['boGotNewUsers','nUser'];  
-  var Key=Object.keys(inObj);
-  if(!isAWithinB(Key, Str)) { return [new ErrorClient('Illegal invariable')];}
-
-  var Sql=[], sqlA="INSERT INTO "+settingTab+" (name,value) VALUES (?,?) ON DUPLICATE KEY UPDATE value=?;";
-  for(var name in inObj){
-    var value=inObj[name]
-    if(typeof value=='string') value=myJSEscape(value);
-    Sql.push(sqlA); Val.push(name,value,value);
-    Ou[name]=value;
-  }
-  var sql=Sql.join("\n ");
-  var [err, results]=yield* this.myMySql.query(flow, sql, Val); if(err) return [err];
-  for(var name in inObj){
-    var value=inObj[name];        Ou[name]=value;
-  }
-  return [null,[Ou]];
-}
 
 
 

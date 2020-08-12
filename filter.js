@@ -398,7 +398,7 @@ filterDivICreator.tmpPrototype.createDivs=function(){
     var strName=el.StrOrderFilt[i];
     var divT=createElement('div').attr('name',strName);
     
-    if(strName in el.helpBub){ var imgH=imgHelp.cloneNode().css({'vertical-align':'top'});  popupHover(imgH,el.helpBub[strName]);    }   
+    if(strName in el.helpBub){ var imgH=imgHelp.cloneNode(1).css({'vertical-align':'top'});  popupHover(imgH,el.helpBub[strName]);    }   
     var strUnit=''; if(strName in el.Unit) strUnit=' ['+el.Unit[strName]+']';
     if(el.Prop[strName].feat.kind[0]=='B') { 
       h=createElement('div').myAppend(calcLabel(el.Label,strName),strUnit,': ',imgH); //.css({'margin':'0.3em 0em 0em'})

@@ -16,13 +16,14 @@
     "ip": "1.1.5",
     "minimist": "1.2.5",
     "mysql": "2.18.1",
-    "node-rsa": "1.0.8",
+    "node-rsa": "1.1.1",
     "node-zip": "1.1.1",
     "redis": "3.0.2",
     "request": "2.88.2",
-    "serialize-javascript": "3.0.0",
+    "serialize-javascript": "4.0.0",
     "streamify-string": "1.0.1",
-    "through": "2.3.8"
+    "through": "2.3.8",
+    "mime": "x"
   },
   "devDependencies": {},
   "private": true,
@@ -31,7 +32,7 @@
     "url": "http://github.com/"
   },
   "engines": {
-    "node": "12.x",
+    "node": ">=12.x",
     "npm": ""
   }
 }

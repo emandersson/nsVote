@@ -47,7 +47,7 @@ tsPopup:'Exact timepoint',
 Login:'Login',
 
   //login
-loginInfo:{
+divLoginInfo:{
 'admin':'admin',
 'voter':'voter',
 'logoutButt':'Sign-out'},

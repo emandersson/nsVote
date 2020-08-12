@@ -1,13 +1,7 @@
 "use strict"
 
-var app=(typeof window==='undefined')?global:window;
+var app;  if(typeof window!=='undefined') app=window; else if(typeof global!=='undefined') app=global; else app=self;  // if browser else if server else serviceworker
 
-
-
-app.calcKeySel=function(Prop, KeyCol){
-  var KeySel=[];  for(var i=0;i<KeyCol.length;i++) { var key=KeyCol[i], b=Prop[key].b;   if(Number(b[bFlip.DBSel])) KeySel.push(key);  }
-  return KeySel;
-}
 
 
 
@@ -27,8 +21,6 @@ if(!String.format){
     });
   };
 }
-
-
 
 app.ltrim=function(str,charlist){
   if(charlist === undefined) charlist = "\\s";
@@ -139,6 +131,7 @@ app.Str_moveM=function(arr,strRefVal,arrMove,boBefore){
 // Object
 //
 
+app.extend=Object.assign;
 app.object_values=function(obj){
   var arr=[];      for(var name in obj) arr.push(obj[name]);
   return arr;
@@ -239,9 +232,9 @@ Date.prototype.floorDay=function(){ this.setHours(0); this.setMinutes(0); this.s
 //
 // Random
 //
-app.randomHash=function(){ return Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);}
 
 app.randomInt=function(min, max){    return min + Math.floor(Math.random() * (max - min + 1));  } // Random integer in the intervall [min, max] (That is including both min and max)
+app.randomHash=function(){ return Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);}
 
 app.gauss=function(){   // returns random number with normal distribution N(0,1)  (mean=0,  std dev=1)
   var x=Math.random(), y=Math.random();
@@ -258,7 +251,15 @@ app.gauss_ms=function(m,s){  // returns random number with normal distribution: 
   if(typeof m=='undefined') m=0; if(typeof s=='undefined') s=1;
   return gauss()*s+m;
 }
-
+app.genRandomString=function(len) {
+  //var characters = 'abcdefghijklmnopqrstuvwxyz';
+  var characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  var str ='';    
+  for(var p=0; p<len; p++) {
+    str+=characters[randomInt(0, characters.length-1)];
+  }
+  return str;
+}
 
 //
 // Math
@@ -275,7 +276,7 @@ app.sign=function(val){if(val<0) return -1; else if(val>0) return 1; else return
 
 
 
-//function getScrollHeight(){  if($.browser.msie)  h=document.getElementsByTagName('body')[0].scrollHeight;   else h=document.body.parentNode.scrollHeight;   return h;  }
+
 
 
 if (typeof(Number.prototype.toRad) === "undefined") {  Number.prototype.toRad = function() {  return this * Math.PI / 180; }   }
@@ -304,11 +305,52 @@ app.degreesToRadians=function(deg) {  return deg*(Math.PI/180);  }
 app.radiansToDegrees=function(rad) {  return rad/(Math.PI/180);  }
 
 
+
 //
 // Data Formatting
 //
 
+app.arrObj2TabNStrCol=function(arrObj){ //  Ex: [{abc:0,def:1},{abc:2,def:3}] => {tab:[[0,1],[2,3]],StrCol:['abc','def']}
+    // Note! empty arrObj returns {tab:[]}
+  var Ou={tab:[]}, lenI=arrObj.length, StrCol=[]; if(!lenI) return Ou;
+  StrCol=Object.keys(arrObj[0]);  var lenJ=StrCol.length;
+  for(var i=0;i<lenI;i++) {
+    var row=arrObj[i], rowN=Array(lenJ);
+    for(var j=0;j<lenJ;j++){ var key=StrCol[j]; rowN[j]=row[key]; }
+    Ou.tab.push(rowN);
+  }
+  Ou.StrCol=StrCol;
+  return Ou;
+}
+app.tabNStrCol2ArrObj=function(tabNStrCol){  //Ex: {tab:[[0,1],[2,3]],StrCol:['abc','def']}    =>    [{abc:0,def:1},{abc:2,def:3}] 
+    // Note! An "empty" input should look like this:  {tab:[]}
+  var tab=tabNStrCol.tab, StrCol=tabNStrCol.StrCol, arrObj=Array(tab.length);
+  for(var i=0;i<tab.length;i++){
+    var row={};
+    for(var j=0;j<StrCol.length;j++){  var key=StrCol[j]; row[key]=tab[i][j];  }
+    arrObj[i]=row;
+  }
+  return arrObj;
+}
+
 app.deserialize=function(serializedJavascript){
   return eval('(' + serializedJavascript + ')');
 }
+
+app.parseQS=function(str){
+  var params = {},      regex = /([^&=]+)=([^&]*)/g, m;
+  while (m = regex.exec(str)) {
+    params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+  }
+  return params;
+}
+
+app.filterPropKeyByB=function(Prop, iBit){ // Check all Prop[strKey].b[iBit] for each strKey. Create an array with all strKey where Prop[strKey].b[iBit] is true.
+  var KeyAll=Object.keys(Prop)
+  var KeyOut=[];  for(var i=0;i<KeyAll.length;i++) { var key=KeyAll[i], b=Prop[key].b;   if(Number(b[iBit])) KeyOut.push(key);  }
+  return KeyOut;
+}
+
+
+
 

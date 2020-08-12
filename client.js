@@ -254,9 +254,13 @@ var divMessageTextCreate=function(){
 // Login stuff
 //
 
-var toggleSpecialistButts=function(){
-  moreDiv.adminButton.toggle(userInfoFrDB.admin);
-  var boIn=Boolean(userInfoFrDB.voter); if(boIn) {var tmp=userInfoFrDB.voter.choise; summaryDiv.setCheckBoxes(tmp); } 
+var loginInfoToggleStuff=function(){
+  divLoginInfo.setStat();
+  divEntryBar.visible(); // This only needed the first time really
+  butAdmin.toggle(userInfoFrDB.admin);
+  var boIn=Boolean(userInfoFrDB.voter);
+  divEntryBar.toggle(!boIn);
+  if(boIn) {var tmp=userInfoFrDB.voter.choise; summaryDiv.setCheckBoxes(tmp); } 
   summaryDiv.deleteButton.toggle(boIn);
 }
 
@@ -268,30 +272,14 @@ var loginReturnVoter=function(){
 var loginReturn2=null;
 app.loginReturn=function(userInfoFrIPT,userInfoFrDBT,fun,strMess,CSRFCodeT){
   CSRFCode=CSRFCodeT;
-  if(browser.brand=='msie'){
-    var tmp=['idIP','IP','nameIP','nickIP','homeTown','state','locale','timezone','gender']; userInfoFrIP={};
-    for(var k in tmp){ userInfoFrIP[tmp[k]]=userInfoFrIPT[tmp[k]];   }
-    
-    var tmp=['idUser','IP','idIP','nameIP','nickIP','boApproved','created'];
-    if(typeof userInfoFrDBT.admin == 'undefined' || typeof userInfoFrDBT.admin == 'unknown' || typeof userInfoFrDBT.admin == 'number') {}else{
-      userInfoFrDB.admin={};
-      for(var k in tmp){ userInfoFrDB.admin[tmp[k]]=userInfoFrDBT.admin[tmp[k]];   }   
-    }
-
-    var tmp=['idUser','IP','idIP','nameIP','nickIP','created','homeTown','state','locale','timezone','gender','lastActivity','choise'];
-    if(typeof userInfoFrDBT.voter == 'undefined' || typeof userInfoFrDBT.voter == 'unknown' || typeof userInfoFrDBT.voter == 'number') {}else{
-      userInfoFrDB.voter={};
-      for(var k in tmp){ userInfoFrDB.voter[tmp[k]]=userInfoFrDBT.voter[tmp[k]];   }   
-    }
-  }
-  else{
-    userInfoFrIP=userInfoFrIPT; userInfoFrDB=userInfoFrDBT;
-  }
-  toggleSpecialistButts();
+  
+  userInfoFrIP=userInfoFrIPT; userInfoFrDB=userInfoFrDBT;
+  
+  loginInfoToggleStuff();
   //if(loginPop.parentNode) loginPop.closeFunc();
   if(loginReturn2) {loginReturn2(); loginReturn2=null;}
 
-  loginInfo.setStat(); 
+  //divLoginInfo.setStat(); 
 }
 
 var loginPopExtend=function(el){
@@ -330,13 +318,13 @@ var loginPopExtend=function(el){
 
   var strType;
   
-  var headHelp=imgHelp.cloneNode().css({'margin-left':'1em'}),  bubHead=createElement('div').myHtml(langHtml.loginPop.DeleteInfo);     popupHover(headHelp,bubHead);
+  var headHelp=imgHelp.cloneNode(1).css({'margin-left':'1em'}),  bubHead=createElement('div').myHtml(langHtml.loginPop.DeleteInfo);     popupHover(headHelp,bubHead);
   var spanHead=createElement('span').css({'font-weight':'bold'});  
   var head=createElement('p').css({'font-weight':'bold'}).myAppend(spanHead,headHelp);  
   
   var fbIm=createElement('img').on('click', function(){popupWin('fb','');}).prop({src:uFBFacebook, alt:"fb"}).css({position:'relative',top:'0.4em'});
   var strTex=site.boOpenVote?'fbCommentOpen':'fbComment';
-  var fbHelp=imgHelp.cloneNode().css({'margin-left':'1em'}),  bub=createElement('div').myHtml(langHtml.loginPop.fbComment);     popupHover(fbHelp,bub);
+  var fbHelp=imgHelp.cloneNode(1).css({'margin-left':'1em'}),  bub=createElement('div').myHtml(langHtml.loginPop.fbComment);     popupHover(fbHelp,bub);
   var pFB=createElement('p').myAppend(fbIm,fbHelp);
   
   var strButtonSize='2em';
@@ -355,7 +343,7 @@ var loginPopExtend=function(el){
   [...formOpenID.querySelectorAll('input[type=text],[type=email],[type=number],[type=password]')].forEach( ele=>ele.css({display:'block'}).on('keypress',(e)=>{if(e.which==13) loginWEmail(e);} ) );
   
   var createAccount=createElement('a').prop({href:'https://openid.net/get-an-openid/'}).myHtml(langHtml.loginPop.openIDProviders).css({'font-size':'75%', display:'block'});
-  var img=imgHelp.cloneNode(), createAccountHelp=createElement('div').myAppend(langHtml.loginPop.createAccountHelp);  popupHover(img,createAccountHelp); 
+  var img=imgHelp.cloneNode(1), createAccountHelp=createElement('div').myAppend(langHtml.loginPop.createAccountHelp);  popupHover(img,createAccountHelp); 
   formOpenID.myAppend(createAccount);
 
   
@@ -377,16 +365,22 @@ var loginPopExtend=function(el){
   var blanket=createElement('div').addClass("blanket");
   var centerDiv=createElement('div').myAppend(head, ...divs, pendingMess, cancelMess);
   centerDiv.addClass("Center").css({padding: '1em 0.8em 1em 0.8em'}); //'width':'21em', height:'12em', 
-  //if(boIE) centerDiv.css({'width':'21em'}); 
   el.addClass("Center-Container").myAppend(centerDiv,blanket); //
 
   return el;
 }
 
-var loginInfoExtend=function(el){
+var divEntryBarExtend=function(el){
+  //var cssBut={width:'initial','font-weight':'bold', padding:'0.2em', height:"auto", 'min-height':'1.8rem'};
+  var butLogin=createElement('button').myAppend(langHtml.Login).on('click', function(){loginReturn2=loginReturnVoter; loginPop.setHead(langHtml.Login).openFunc('voter'); });
+  el.css({ display:"flex", "justify-content":"center", 'align-items':'center'}); //, 'border-top':'solid 1px', "justify-content":"space-evenly"
+  el.myAppend(butLogin);
+  return el;
+}
+var divLoginInfoExtend=function(el){
   el.setStat=function(){
     var boShow=0,arrKind=[];
-    for(var key in userInfoFrDB){   if(userInfoFrDB[key]) { boShow=1; arrKind.push(langHtml.loginInfo[key]); }   }
+    for(var key in userInfoFrDB){   if(userInfoFrDB[key]) { boShow=1; arrKind.push(langHtml.divLoginInfo[key]); }   }
     if(boAppIP) boShow=0;
     if(boShow){
       spanName.myText(userInfoFrIP.nameIP);
@@ -396,9 +390,9 @@ var loginInfoExtend=function(el){
       el.hide(); 
     } 
   }
-  var spanName=createElement('span'), spanKind=createElement('span'); 
-  //var logoutButt=createElement('a').prop({href:''}).myText(langHtml.loginInfo.logoutButt).css({'float':'right'});
-  var logoutButt=createElement('button').myText(langHtml.loginInfo.logoutButt).css({'float':'right','font-size':'90%'});
+  var spanName=createElement('span'), spanKind=createElement('span').css({'margin-left':'.4em', 'margin-right':'0.4em'});
+  //var logoutButt=createElement('a').prop({href:''}).myText(langHtml.divLoginInfo.logoutButt).css({'float':'right'});
+  var logoutButt=createElement('button').myText(langHtml.divLoginInfo.logoutButt).css({'margin-left':'auto'}); //.css({'float':'right','font-size':'90%'});
   logoutButt.on('click', function(){ 
     userInfoFrIP={}; 
     var vec=[['logout',{}, function(data){
@@ -409,7 +403,7 @@ var loginInfoExtend=function(el){
     return false;
   });
 
-  el.myAppend(spanName,' ',spanKind,' ',logoutButt);
+  el.myAppend(spanName, spanKind, logoutButt).css({display:'flex', 'justify-content':'space-between', 'align-items':'center', 'font-size':'12px'});
   el.hide();
   return el;
 }
@@ -442,7 +436,7 @@ var voterListHeadExtend=function(el){
 var voterListTHeadExtend=function(el){
   el.myCreate=function(){
     for(var i=0;i<voterListDiv.StrProp.length;i++){
-      var strName=voterListDiv.StrProp[i], jtmp=colsFlip[strName];
+      var strName=voterListDiv.StrProp[i];
       var h=createElement('th').myAppend(voterListDiv.arrLabel[strName]).attr('name',strName); 
       elR.append(h);
     };
@@ -464,10 +458,11 @@ var voterListDivExtend=function(el){
         //MTab[i].choise=tabChoise[i];
       }
     }
+    //MTab=tabNStrCol2ArrObj(MOrg);
   }
   el.load=function(){ 
     setMess('... fetching data ... ',5,true);
-    var vec=[['setUp',{}],['setUpCond',{Filt:filterDiv.divCont.gatherFiltData()},voterListDiv.setUpCondRet],['getList',{offset:offset,rowCount:el.rowCount},el.getListRet]];   majax(oAJAX,vec);
+    var vec=[['setUp',{}],['setUpCond',{Filt:filterDiv.divCont.gatherFiltData()},voterListDiv.setUpCondRet],['getList',{offset,rowCount:el.rowCount},el.getListRet]];   majax(oAJAX,vec);
   }
   el.setUpCondRet=function(data){ 
     var tmp=data.curTime;   if(typeof tmp!="undefined")  curTime=tmp;
@@ -603,7 +598,7 @@ var FilterDiv=function(Prop, Label, StrOrderFilt, changeFunc, StrGroupFirst=[], 
   var el=createElement('div');
   el.toString=function(){return 'FilterDiv';}
 
-  var objArg={Prop:Prop, Label:Label, StrOrderFilt:StrOrderFilt, changeFunc:changeFunc, StrGroupFirst:StrGroupFirst, StrGroup:StrGroup, helpBub:helpBub, objSetting:objFilterSetting};
+  var objArg={Prop, Label, StrOrderFilt, changeFunc, StrGroupFirst, StrGroup, helpBub, objSetting:objFilterSetting};
   el.divCont=filterDivICreator(objArg, changeFunc).addClass('contDiv').css({'max-width':menuMaxWidth+'px',margin:'0em auto','text-align':'left'});
   
   var buttonBack=createElement('button').myText(langHtml.Back).addClass('fixWidth').on('click', historyBack).css({'margin-left':'0.8em','margin-right':'1em'});
@@ -675,8 +670,7 @@ var summaryDivExtend=function(el){
     });
   }
   el.setHist=function(){   
-    //var iFeat=featNameFlip.choise;
-    var iFeat=colsFlip.choise, histT=filterDiv.divCont.Hist[iFeat]; 
+    var iFeat=StrOrderFiltFlip.choise, histT=filterDiv.divCont.Hist[iFeat]; 
     var maxV=arr_max(histT[1].concat(1)), fac=1;  if(maxV>objFilterSetting.maxStaple) fac=objFilterSetting.maxStaple/maxV; 
     tdNVote.forEach(function(ele,i){
       var td=tdNVote[i];
@@ -687,12 +681,14 @@ var summaryDivExtend=function(el){
   }
 
   var thClick=function(){
-    var boAsc=this.children[0].src==uDecreasing;
+    //var boAsc=this.children[0].src==uDecreasing;
+    var boAsc=this.children[0].srcset==srcsetDecreasing;
     //var boAsc=(thSorted===this)?!boAsc:this.boAscDefault;
     //thSorted=this;
     //var iChild=this.myIndex()
-    arrImgSort.forEach(ele=>ele.prop({src:uUnsorted}) );
-    var tmp=boAsc?uIncreasing:uDecreasing;  this.children[0].prop({src:tmp});
+    arrImgSort.forEach(ele=>ele.prop({srcset:srcsetUnsorted}) );
+    //var tmp=boAsc?uIncreasing:uDecreasing;  this.children[0].prop({src:tmp});
+    var tmp=boAsc?srcsetIncreasing:srcsetDecreasing;  this.children[0].prop({srcset:tmp});
 
     var arrT=tBody.querySelectorAll('tr'), arrToSort=[...arrT];
     var iCol=this.iCol; // One of the headercells spans two columns, so iChild!=iCol
@@ -708,11 +704,11 @@ var summaryDivExtend=function(el){
   
   var colStaple='#f70';
 
-  var arrImgSort=[createElement('img'), createElement('img'), createElement('img')]; arrImgSort.forEach(ele=>ele.prop({src:uUnsorted, alt:"sort"}).css({margin:'0 0.3em'}));
+  var arrImgSort=[createElement('img'), createElement('img'), createElement('img')]; arrImgSort.forEach(ele=>ele.prop({srcset:srcsetUnsorted, alt:"sort"}).css({margin:'0 0.3em', width:"8px"}));
   
   var thName=createElement('th').myAppend(langHtml.Option,arrImgSort[0]).on('click', thClick).prop({iCol:0});
   var thNVote=createElement('th').myAppend(langHtml.Votes,arrImgSort[1]).on('click', thClick).prop({colSpan:2, iCol:1});
-  var thUserVote=createElement('th').myAppend(langHtml.YourVote, arrImgSort[2]).on('click', thClick).prop({iCol:1}).css({'text-align':'center','padding-left':'1em'});
+  var thUserVote=createElement('th').myAppend(langHtml.YourVote, arrImgSort[2]).on('click', thClick).prop({iCol:3}).css({'text-align':'center','padding-left':'1em'});
 
   var heads=[thName, thNVote, thUserVote]; heads.forEach(ele=>ele.css({cursor:'pointer'}));
   var tHead=createElement('thead').myAppend(createElement('tr').myAppend(...heads));
@@ -725,9 +721,10 @@ var summaryDivExtend=function(el){
   
   for(var i=0;i<nOption;i++){
     var bar=createElement('span').css({background:colStaple,height:'1em',display:'inline-block',position:'relative',bottom:'-1px'});
-    var cbT=createElement('input').prop({type:'checkbox', ind:i}); 
+    var cbT=createElement('input').prop({type:'checkbox', ind:i}).attr({id:'cb'+i}); 
     
-    var tdOptionName=createElement('td').myAppend(arrOption[i]).prop({sortValF:sortValFName});
+    var label=createElement('label').attr({for:'cb'+i}).myAppend(arrOption[i]);
+    var tdOptionName=createElement('td').myAppend(label).prop({sortValF:sortValFName});
     var tdNVotes=createElement('td');
     var tdCB=createElement('td').myAppend(cbT).prop({sortValF:sortValFCB});
     
@@ -746,9 +743,10 @@ var summaryDivExtend=function(el){
   var tableButtonLoc=tableButton.cloneNode(true).css({'margin-right':'2px'}).on('click', function(){voterListButtonClick();});
   if(site.boOpenVote==0) tableButtonLoc.hide();
   el.filterInfoWrap=createElement('span');
-  var filterButton=createElement('button').myAppend(langHtml.Filter,': (',el.filterInfoWrap,')').css({'float':'right','clear':'both'}).on('click', function(){  filterButtonClick();  });
+  var filterButton=createElement('button').myAppend(langHtml.Filter,': (',el.filterInfoWrap,')').css({}).on('click', function(){  filterButtonClick();  }); //     'float':'right','clear':'both'
 
-  var topDivA=createElement('div').myAppend(moreButton,tableButtonLoc,filterButton).css({'margin-top':'1em',overflow:'hidden'});
+  var topDivA=createElement('div').myAppend(butAdmin, tableButtonLoc, filterButton).css({'margin-top':'1em',overflow:'hidden', display:'flex',
+  'justify-content':'space-between', width: '100%', flex:'0 0 auto'});
 
   el.deleteButton=createElement('button').myAppend(langHtml.DeleteMyVote).on('click', function(){var vec=[['UDelete',{},el.setAllOff]];   majax(oAJAX,vec);});
 
@@ -815,7 +813,7 @@ var voterInfoDivExtend=function(el){
   el.createContainers=function(){
     for(var i=0;i<el.StrProp.length;i++){ 
       var strName=el.StrProp[i], tmpObj=(strName in el)?el[strName]:emptyObj; 
-      var imgH=''; if(strName in helpBub && Number(Prop[strName].b[bFlip.help])) { imgH=imgHelp.cloneNode();   popupHover(imgH,helpBub[strName]); }
+      var imgH=''; if(strName in helpBub && Number(Prop[strName].b[bFlip.help])) { imgH=imgHelp.cloneNode(1);   popupHover(imgH,helpBub[strName]); }
       
       var strDisp,strMargRight,strWW; if(Number(Prop[strName].b[bFlip.block])) {strDisp='block'; strMargRight='0em',strWW='';} else {strDisp='inline'; strMargRight='.2em'; strWW='nowrap';}
       
@@ -850,9 +848,12 @@ var voterInfoDivExtend=function(el){
     var trt;
     if(iDiff==1) {
       trt=el.tr.nextElementSibling;
-      if(trt.length==0 || trt.css('display')=='none') trt=el.tr.parentNode.children[0];
+      //if(trt.length==0 || trt.css('display')=='none') trt=el.tr.parentNode.children[0];
+      if(!trt) trt=el.tr.parentNode.children[0];
     } else {
-      trt=el.tr.prev(); if(trt.length==0) trt=voterListDiv.tBody.children[nMTab-1];
+      trt=el.tr.previousElementSibling;
+      //if(trt.length==0) trt=voterListDiv.tBody.children[nMTab-1];
+      if(!trt) trt=voterListDiv.tBody.children[nMTab-1];
     }
     var iTmp=trt.iMTab;
     //el.setContainers(MTab[iTmp].idIP);
@@ -865,36 +866,6 @@ var voterInfoDivExtend=function(el){
   el.menuDiv=createElement('div').myAppend(buttonBack,arrowDiv).css({'margin-top':'1em','padding':'0'}); //,overflow:'hidden'
   el.append(el.menuDiv,el.divCont);
   
-  return el;
-}
-
-
-
-
-var moreDivExtend=function(el){
-  el.toString=function(){return 'moreDiv';}
-
-  var buttonBack=createElement('button').on('click', historyBack).myAppend(langHtml.Back).css({'margin-left':'0.6em'});
-  var aWiki=createElement('a').prop({href:uInfo,target:"_blank", rel:"noopener"}).myAppend(langHtml.Wiki);
- 
-  
-  var buttLogin=createElement('button').myAppend(langHtml.Login).on('click', function(){loginReturn2=loginReturnVoter; loginPop.setHead(langHtml.Login).openFunc('voter'); });
-  buttLogin.css({'display':'block'});
-
-  var divWiki=createElement('div').myAppend(aWiki,' (',langHtml.moreInfo,')');
-
-  var aSoftWiki=createElement('a').prop({href:uInfo,target:"_blank", rel:"noopener"}).myAppend('Vote software (info)');
-  var aSoft=createElement('a').prop({href:uSrc,target:"_blank", rel:"noopener"}).myAppend(langHtml.sourceCode);
-  var divSoft=createElement('div').myAppend( aSoftWiki, ' (',aSoft,')');  //langHtml.textSoft, ' ',
-
-  el.adminButton=createElement('button').myText('Admin').css({display:'block'}).on('click',function(){ 
-    adminDiv.setVis(); doHistPush({view:adminDiv});
-  });
-  var divs=[buttLogin, el.adminButton, divSoft]; 
-  var topDiv=createElement('div').myAppend(buttonBack).css({'margin-top':'1em',overflow:'hidden'});
-  divs.forEach(ele=>ele.css({'margin-top':'1em','margin-left':'0.6em','display':'block'}));
-  el.append(topDiv, ...divs);   
- 
   return el;
 }
 
@@ -934,7 +905,7 @@ var majax=function(trash, vecIn){  // Each argument of vecIn is an array: [serve
     var dataFetched=this.response;
     var data; try{ data=JSON.parse(this.response); }catch(e){ setMess(e);  return; }
     
-    var dataArr=data.dataArr;  // Each argument of dataArr is an array, either [argument] or [altFuncArg,altFunc]
+    var dataArr=data.dataArr||[];  // Each argument of dataArr is an array, either [argument] or [altFuncArg,altFunc]
     delete data.dataArr;
     beRet(data);
     for(var i=0;i<dataArr.length;i++){
@@ -965,9 +936,8 @@ app.GRet=function(data){
   tmp=data.CSRFCode;   if(typeof tmp!="undefined") CSRFCode=tmp;
   tmp=data.userInfoFrIP; if(typeof tmp!="undefined") {userInfoFrIP=tmp;}
   tmp=data.userInfoFrDBUpd; if(typeof tmp!="undefined") {
-    for(var key in tmp){ userInfoFrDB[key]=tmp[key]; } 
-    loginInfo.setStat(); 
-    toggleSpecialistButts();
+    for(var key in tmp){ userInfoFrDB[key]=tmp[key]; }  
+    loginInfoToggleStuff();
   }
 }
 
@@ -1001,22 +971,20 @@ elBody.css({margin:'0px', padding:0});
 
 app.boTouch = Boolean('ontouchstart' in document.documentElement);  //boTouch=1;
 
-var browser=getBrowser();
-var intBrowserVersion=parseInt(browser.version.slice(0, 2));
 
 
 var ua=navigator.userAgent, uaLC = ua.toLowerCase(); //alert(ua);
 app.boAndroid = uaLC.indexOf("android") > -1;
 app.boFF = uaLC.indexOf("firefox") > -1; 
-//boIE = uaLC.indexOf("msie") > -1; 
-var versionIE=detectIE();
-app.boIE=versionIE>0; if(boIE) browser.brand='msie';
 
-app.boChrome= /chrome/i.test(uaLC);
-app.boIOS= /iPhone|iPad|iPod/i.test(uaLC);
+app.boChrome= /chrome/.test(uaLC);
+app.boIOS= /iphone|ipad|ipod/.test(uaLC);
 app.boEpiphany=/epiphany/.test(uaLC);    if(boEpiphany && !boAndroid) boTouch=false;  // Ugly workaround
+app.boEdge= /\bedg\b/.test(uaLC);
 
-app.boOpera=RegExp('OPR\\/').test(ua); if(boOpera) boChrome=false; //alert(ua);
+app.boOpera=RegExp('OPR\\/').test(ua);
+
+if(boOpera) boChrome=false; //alert(ua);
 
 app.boSmallAndroid=0;
 
@@ -1033,7 +1001,7 @@ var boStateInHistory='state' in history;
 if(!boStateInHistory) { alert('This browser does not support history.state'); return;}
 
 
-if(!(typeof sessionStorage=='object' && sessionStorage.getItem)) {alert("Your browser doesn't support sessionStorage"); return;}
+if(!(typeof sessionStorage=='object' && sessionStorage.getItem)) {alert("This browser doesn't support sessionStorage"); return;}
 
 //var imgUriTmp=makeMarker(0);  boImgCreationOK=1;  if(imgUriTmp.length<10) boImgCreationOK=0;
 //boImgCreationOK=0;
@@ -1050,15 +1018,12 @@ var colsShowInd=['image','name','locale','timezone','homeTown'];
 var userInfoFrDB=extend({}, specialistDefault);
 var userInfoFrIP={};
 
+var {Prop, StrOrderFilt, strFirstSort, boAscFirstSort}=site;
+var KeyProp=Object.keys(Prop), nProp=KeyProp.length;   
+var KeySel=filterPropKeyByB(Prop,bFlip.DBSel);
 
-var Prop=site.Prop, KeyCol=Object.keys(Prop), nCol=KeyCol.length,  StrOrderFilt=site.StrOrderFilt;   
-var KeySel=calcKeySel(Prop,KeyCol);
 
-
-var colsFlip=array_flip(KeyCol);
 var StrOrderFiltFlip=array_flip(StrOrderFilt);
-var strFirstSort=site.strFirstSort;
-var boAscFirstSort=site.boAscFirstSort;
 var arrOption=site.Option, nOption=arrOption.length;
 var boAppIP=site.typeApp=='ip';
 var boAppGoogle=site.typeApp=='google';
@@ -1097,8 +1062,11 @@ var uFBFacebook=uImageFolder+'fbFacebook.png';
 var uGoogle=uImageFolder+'google.jpg';
 var uGoogleButton=uImageFolder+'googleButton.gif';
 var uIncreasing=uImageFolder+'increasing.png';
+var srcsetIncreasing=uIncreasing+" 1x, "+uIncreasing+" 2x ";
 var uDecreasing=uImageFolder+'decreasing.png';
+var srcsetDecreasing=uDecreasing+" 1x, "+uDecreasing+" 2x ";
 var uUnsorted=uImageFolder+'unsorted.png';
+var srcsetUnsorted=uUnsorted+" 1x, "+uUnsorted+" 2x ";
 var uOpenId=uImageFolder+'openid-inputicon.gif';
 var uOI22=uImageFolder+'oi22.png';
 var uBusy=uImageFolder+'busy.gif';
@@ -1106,11 +1074,13 @@ var uBusyLarge=uImageFolder+'busyLarge.gif';
 var uDelete=uImageFolder+'delete.png';
 var uDelete1=uImageFolder+'delete1.png';
 var uList16=uImageFolder+'list16.png';
+var srcsetList=uList16+" 1x, "+uList16+" 2x";
 var uFilter=uImageFolder+'filter.png';
 var uDummy=uImageFolder+'dummy.gif';
 
 
-var maxWidth='800px';
+//var maxWidth='800px';
+var maxWidth='var(--maxWidth)';
 
 var colMenuOn='#aaa', colMenuOff='#ddd'; 
 var colMenuBOn='#616161', colMenuBOff='#aaa';    
@@ -1142,12 +1112,12 @@ var tmp=getItem('boFirstVisit'),  boFirstVisit=tmp===null;      setItem('boFirst
 var boFirstAJAX=true;
 
 app.imgHelp=createElement('img').prop({src:uHelpFile, alt:"help"}).css({'vertical-align':'-0.4em'});
+app.hovHelpMy=createElement('span').myText('❓').addClass('btn-round', 'helpButtonGradient').css({color:'transparent', 'text-shadow':'0 0 0 #5780a8'});
+app.imgHelp=hovHelpMy;
 
-/*  helpBub={}; for(var i=0;i<nCols;i++){
-  var strName=cols[i], text=langHtml.helpBub[strName];    if(text!='') { helpBub[strName]=createElement('div').myHtml(text); }
-}*/
-app.helpBub={}; for(var i=0;i<nCol;i++){
-  var strName=KeyCol[i], text='';
+
+app.helpBub={}; for(var i=0;i<nProp;i++){
+  var strName=KeyProp[i], text='';
   if(strName in langHtml.helpBub)  text=langHtml.helpBub[strName];   
   if(text!='') { helpBub[strName]=createElement('div').myHtml(text); }
 }
@@ -1219,12 +1189,7 @@ if(boFF){
 var oAJAX={};
 
 
-var H1=elBody.querySelector('h1:nth-of-type(1)').detach();
-//var divAbout=elBody.querySelector('div').detach();
 
-elBody.css({visibility:'visible',background:'#fff'});
-
-//colButtAllOn='#9f9', colButtOn='#0f0', colButtOff='#ddd', colFiltOn='#bfb', colFiltOff='#ddd', colFontOn='#000', colFontOff='#777', colActive='#65c1ff', colStapleOn='#f70', colStapleOff='#bbb';
 window.objFilterSetting={colButtAllOn:'#9f9', colButtOn:'#0f0', colButtOff:'#ddd', colFiltOn:'#bfb', colFiltOff:'#ddd', colFontOn:'#000', colFontOff:'#777', colActive:'#65c1ff', colStapleOn:'#f70', colStapleOff:'#bbb', maxStaple:20};
 
 
@@ -1232,13 +1197,7 @@ var uInfo='https://emagnusandersson.com/nsVote';
 var uSrc='https://github.com/emagnusandersson/nsVote';
 var aLink=createElement('a').prop({href:uInfo}).myAppend('more info').css({'font-size':'100%','font-weight':'bold',margin:'0.1em 0em 1.5em',display:'inline-block'});   
   
-
-
-elBody.css({'text-align':'center'});
-
-
-var loginInfo=loginInfoExtend(createElement('div'));  loginInfo.css({padding:'0em 0em 0em 0em','font-size':'75%'});
-var loginPop=loginPopExtend(createElement('div'));    //loginPop.css({border:'1px solid #000'});
+var loginPop=loginPopExtend(createElement('div'));
 
 var adminDiv=adminDivExtend(createElement('div')); 
 
@@ -1262,13 +1221,14 @@ var columnSelectorDiv=createElement('div');//columnSelectorDivExtend(createEleme
 var columnSorterDiv=createElement('div');//columnSorterDivExtend(createElement('div'));
 var voterInfoDiv=voterInfoDivExtend(createElement('div'));
 
-var iframeLike=createElement('iframe');
+//var iframeLike=createElement('iframe');
 
-var tmpImg=createElement('img').prop({src:uList16}).css({height:'0.9em','vertical-align':'middle'});
-var tableButton=createElement('button').myAppend(tmpImg).css({'margin-right':'1em'});
+var tmpImg=createElement('img').prop({srcset:srcsetList, alt:"list"}).css({height:'0.9em','vertical-align':'middle'});
+var tableButton=createElement('button').myAppend(tmpImg).css({'margin-right':'1em'}).prop({'aria-label':"List of voters"});
 
-var moreButton=createElement('button').myText('≡').css({'margin-left':'0.6em','margin-right':'1em'}); 
-var moreDiv=moreDivExtend(createElement('div'));
+var butAdmin=createElement('button').myText('≡').css({'margin-left':'0.6em','margin-right':'1em'}).on('click',function(){ 
+  adminDiv.setVis(); doHistPush({view:adminDiv});
+}).hide();
 
 
 var voterListHead=voterListHeadExtend(createElement('div')).css({padding:'0 0.3em','text-align':'left'});
@@ -1276,8 +1236,17 @@ var voterListTHead=voterListTHeadExtend(createElement('thead')).css({'text-align
 var voterListDiv=voterListDivExtend(createElement('div'));  voterListDiv.css({margin:'0em 0 0.9em 0'});  voterListDiv.table.css({border:'black 1px solid'}); //,display:'table'
 voterListDiv.table.prepend(voterListTHead);
 
-var summaryDiv=summaryDivExtend(createElement('div'));
+var summaryDiv=elBody.querySelector('#summaryDiv');
+summaryDiv.querySelector('noscript').detach();
+
+var divEntryBar=summaryDiv.querySelector('#divEntryBar');
+divEntryBarExtend(divEntryBar); divEntryBar.css({flex:'0 0 auto', padding:'0em'}); //, , visibility:'hidden'
+var divLoginInfo=divLoginInfoExtend(createElement('div')).addClass('mainDivR').css({flex:'0 0 auto', 'min-height':'2rem'}).hide();  //, 'line-height':'1.6em'
+divEntryBar.after(divLoginInfo);
+
+summaryDivExtend(summaryDiv);
 summaryDiv.filterInfoWrap.myAppend(filterInfoSpan);
+
 
 rewriteObj();
 
@@ -1289,28 +1258,24 @@ voterInfoDiv.createContainers();
 
 
 
-var MainDiv=[loginInfo, H1, summaryDiv, voterListHead, voterListDiv, filterDiv, adminDiv, voterInfoDiv, moreDiv, columnSelectorDiv, columnSorterDiv, loginPop];
+
+var MainDiv=[summaryDiv, voterListHead, voterListDiv, filterDiv, adminDiv, voterInfoDiv, columnSelectorDiv, columnSorterDiv, loginPop]; //, divEntryBar, divLoginInfo, H1, 
 
 
-var tmpCss={'border-top':'1px solid white', 'margin-left':'auto','margin-right':'auto','text-align':'left',background:'#fff'};   MainDiv.forEach(ele=>ele.css(tmpCss));
-var MainDivsNonFixWidth=[];  if(!boTouch) {MainDivsNonFixWidth.push(voterListDiv)}
-var MainDivsFixWidth=AMinusB(MainDiv,MainDivsNonFixWidth);  MainDivsFixWidth.forEach(ele=>ele.css({'max-width':maxWidth}));
+var tmpCss={'border-top':'1px solid white', 'margin-left':'auto', 'margin-right':'auto','text-align':'left',background:'#fff'};   
+MainDiv.forEach(ele=>ele.css(tmpCss));
+AMinusB(MainDiv, [voterListDiv]).forEach(ele=>ele.css({'max-width':maxWidth}));
 
-var tmpCss={'min-width':'800px',display:'inline-block','text-align':'left'};  MainDivsNonFixWidth.forEach(ele=>ele.css(tmpCss));
+voterListDiv.css({'text-align':'center', 'min-width':'800px',display:'inline-block','text-align':'left'});
 voterListDiv.querySelector('table').css({'margin-top':'1em'});
 
-H1.css({background:'#ff0',border:'solid 1px',color:'black','font-size':'1.6em','font-weight':'bold','text-align':'center', padding:'0.4em 0em 0.4em 0em'}); 
+//H1.css({background:'#ff0',border:'solid 1px',color:'black','font-size':'1.6em','font-weight':'bold','text-align':'center', padding:'0.4em 0em 0.4em 0em'}); 
 
-MainDiv.forEach(ele=>ele.hide());
-
-H1.show(); summaryDiv.show();
-
+AMinusB(MainDiv, [summaryDiv]).forEach(ele=>ele.hide());
 
 elBody.append(...MainDiv);  
 
-
 history.StateMy[history.state.ind]={view:summaryDiv};
-
 
 
 var voterListButtonClick=function(){ 
@@ -1320,66 +1285,47 @@ var filterButtonClick=function(){
  filterDiv.setVis(); doHistPush({view:filterDiv});
 }
 tableButton.on('click',voterListButtonClick);
-moreButton.on('click',function(){ 
-  moreDiv.setVis(); doHistPush({view:moreDiv});
-}); 
 
-var MainDivsTogglable=AMinusB(MainDiv,[loginInfo, H1]); 
 
 summaryDiv.setVis=function(){
-  MainDivsTogglable.forEach(ele=>ele.hide()); this.show();
+  MainDiv.forEach(ele=>ele.hide()); this.show();
   summaryDiv.filterInfoWrap.append(filterInfoSpan);
   return true;
 }
 voterListDiv.setVis=function(){
-  MainDivsTogglable.forEach(ele=>ele.hide()); this.show(); voterListHead.show();
+  MainDiv.forEach(ele=>ele.hide()); this.show(); voterListHead.show();
   voterListHead.filterInfoWrap.append(filterInfoSpan);
   return true;
 }
 filterDiv.setVis=function(){
-  MainDivsTogglable.forEach(ele=>ele.hide()); this.show();
+  MainDiv.forEach(ele=>ele.hide()); this.show();
   filterDiv.filterInfoWrap.append(filterInfoSpan);
   return true;
 }
 voterInfoDiv.setVis=function(){
   if(voterInfoDiv.boLoaded==0) return false;
-  MainDivsTogglable.forEach(ele=>ele.hide()); this.show();
+  MainDiv.forEach(ele=>ele.hide()); this.show();
   return true;
 }
 adminDiv.setVis=function(){
-  MainDivsTogglable.forEach(ele=>ele.hide()); this.show();
-  return true;
-}
-moreDiv.setVis=function(){
-  MainDivsTogglable.forEach(ele=>ele.hide()); this.show();
+  MainDiv.forEach(ele=>ele.hide()); this.show();
   return true;
 }
 columnSelectorDiv.setVis=function(){
   if(columnSelectorDiv.boLoaded==0) return false;
-  MainDivsTogglable.forEach(ele=>ele.hide()); this.show();
+  MainDiv.forEach(ele=>ele.hide()); this.show();
   return true;
 }
 columnSorterDiv.setVis=function(){
   if(columnSorterDiv.boLoaded==0) return false;
-  MainDivsTogglable.forEach(ele=>ele.hide()); this.show();
+  MainDiv.forEach(ele=>ele.hide()); this.show();
   return true;
 }
 
 
 
-var orientationChangeMy=function(event){  
-  var maxWidth=800, wTab; if(window.innerWidth>maxWidth)  {wTab=maxWidth+'px'; } else {wTab='';}  voterListDiv.css({'min-width':wTab}); 
-}
-
-if(boIOS) window.on('orientationchange', orientationChangeMy);
-else window.on('resize', orientationChangeMy);
-orientationChangeMy();
-
 var vec=[['specSetup',{}],['setUp',{}],['setUpCond',{Filt:filterDiv.divCont.gatherFiltData()},voterListDiv.setUpCondRet],['getList',{offset:0,rowCount:voterListDiv.rowCount},voterListDiv.getListRet],['getHist',null,getHistRet]];   majax(oAJAX,vec);
 setMess('... fetching data... ',0,true);
-
-
-
 
 
 }
